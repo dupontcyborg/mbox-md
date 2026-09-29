@@ -1,0 +1,28 @@
+# Real mail data
+*.mbox
+*.mbox.zst
+*.mbox.gz
+*.eml
+/markdown/
+/out/
+/output/
+_unparsed/
+/attachments/
+/messages.jsonl
+# Synthetic test fixtures (fabricated data)
+!tests/fixtures/**
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
