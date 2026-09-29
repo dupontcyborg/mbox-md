@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mbox-md"
+dynamic = ["version"]
+description = "Convert Gmail Takeout and other mbox archives into Markdown files with deduplicated attachments."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Nicolas Dupont" }]
+keywords = ["mbox", "email", "markdown", "gmail", "takeout", "archive"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Communications :: Email",
+    "Typing :: Typed",
+]
+dependencies = [
+    "markdownify>=1.2.3",
+]
+
+[project.scripts]
+mbox-md = "mbox_md.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff"]
+
+[tool.hatch.version]
+path = "src/mbox_md/__init__.py"
+
+# Allow-list what ships, so local-data/ or stray real mail can never be packaged.
+[tool.hatch.build.targets.sdist]
+only-include = ["src/mbox_md", "tests", "pyproject.toml", "README.md", "TODO.md"]
+exclude = ["tests/**/*.mbox.zst"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mbox_md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["local: needs the gitignored real-mail sample in local-data/ (skipped when absent)"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

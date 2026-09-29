@@ -9,6 +9,8 @@
 _unparsed/
 /attachments/
 /messages.jsonl
+# Local reference datasets built from real mail (never commit, never package)
+/local-data/
 # Synthetic test fixtures (fabricated data)
 !tests/fixtures/**
 
