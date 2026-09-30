@@ -6,9 +6,13 @@ Work in progress.
 
 ## Usage
 
+CLI:
+
 ```sh
 uv run mbox-md "All mail Including Spam and Trash.mbox" out/
 ```
+
+API:
 
 ```python
 import mbox_md
