@@ -23,6 +23,9 @@ build/
 dist/
 .pytest_cache/
 .ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # OS / editor
 .DS_Store

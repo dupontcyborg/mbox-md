@@ -43,6 +43,7 @@ uv sync
 uv run pytest            # unit tests, fabricated data only
 uv run pytest -m local   # smoke test against local-data/takeout-sample.mbox, if you have it
 uv run mypy              # strict type checking
+uv run coverage run -m pytest && uv run coverage combine && uv run coverage report   # branch coverage, 95% minimum
 uv run ruff check src tests && uv run ruff format --check src tests
 ```
 

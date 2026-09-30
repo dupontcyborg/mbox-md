@@ -37,6 +37,7 @@ mbox-md = "mbox_md._cli:main"
 
 [dependency-groups]
 dev = [
+    "coverage[toml]>=7.16.2",
     "mypy>=2.3.1",
     "pytest>=8",
     "ruff",
@@ -57,6 +58,20 @@ packages = ["src/mbox_md"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["local: needs the gitignored real-mail sample in local-data/ (skipped when absent)"]
+
+[tool.coverage.run]
+source = ["mbox_md"]
+branch = true
+# Worker processes run most of the conversion code; measure them too.
+concurrency = ["multiprocessing", "thread"]
+patch = ["subprocess"]
+parallel = true
+
+[tool.coverage.report]
+fail_under = 95  # measured 98% on 2026-09-30; raise it as coverage grows
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise AssertionError"]
 
 [tool.mypy]
 strict = true

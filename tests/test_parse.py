@@ -147,3 +147,15 @@ def test_malformed_from_falls_back_to_raw_header():
 
 def test_well_formed_from_is_unchanged():
     assert parse_message(make_message()).from_ == "Alice Example <alice@example.test>"
+
+
+def test_strip_quotes_handles_wrapped_attribution_and_outlook_tails():
+    from mbox_md._body import strip_quoted_replies
+
+    wrapped = "Yes.\n\nOn Mon, Jan 15, 2024 at 10:00 AM Bob Example <\nbob@example.org> wrote:\n\n> hi\n\nThanks"
+    assert strip_quoted_replies(wrapped) == "Yes.\n\nThanks"
+    assert strip_quoted_replies("Reply\n\n-----Original Message-----\nFrom: x\nstuff") == "Reply"
+    assert strip_quoted_replies("Reply\n\nFrom: Bob\nSent: Monday\nTo: Alice\n\nold text") == "Reply"
+    prose = "Top line\nOn the other hand, this is prose.\n\nNo quotes here."
+    assert strip_quoted_replies(prose) == prose
+    assert strip_quoted_replies("Inline > arrow stays\n>quoted") == "Inline > arrow stays"

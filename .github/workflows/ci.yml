@@ -34,6 +34,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python: ["3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: ubuntu-latest
+            python: "3.13"
+            coverage: true
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -41,7 +45,15 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: uv sync --locked
-      - run: uv run pytest -ra
+      - if: ${{ !matrix.coverage }}
+        run: uv run pytest -ra
+      - if: ${{ matrix.coverage }}
+        name: Tests with coverage (minimum in pyproject.toml)
+        run: |
+          uv run coverage run -m pytest -ra
+          uv run coverage combine
+          uv run coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+          uv run coverage report
 
   build:
     runs-on: ubuntu-latest

@@ -207,3 +207,78 @@ def test_zst_stream_matches_plain_and_reports_position(tmp_path):
 def test_missing_file_raises_read_error(tmp_path):
     with pytest.raises(ReadError, match="no such file"):
         MboxStream(tmp_path / "missing.mbox")
+
+
+def test_workers_must_be_positive(capsys, tmp_path):
+    with pytest.raises(SystemExit):
+        main([str(FIXTURES / "basic.mbox"), str(tmp_path), "--workers", "0"])
+    assert "--workers must be at least 1" in capsys.readouterr().err
+
+
+def test_worker_error_exits_1(capsys, tmp_path, monkeypatch):
+    from mbox_md import WorkerError
+
+    def broken(*args, **kwargs):
+        raise WorkerError("a worker process failed to start")
+
+    monkeypatch.setattr("mbox_md._cli.convert", broken)
+    code, _, err = run(capsys, FIXTURES / "basic.mbox", tmp_path / "out")
+    assert code == 1 and "worker process failed" in err
+
+
+def test_ctrl_c_exits_130_and_points_at_partial_output(capsys, tmp_path, monkeypatch):
+    def interrupted(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr("mbox_md._cli.convert", interrupted)
+    code, _, err = run(capsys, FIXTURES / "basic.mbox", tmp_path / "out")
+    assert code == 130 and "interrupted" in err and "partial output" in "".join(err.split("\n"))
+
+
+def test_summary_shows_range_attachments_and_timing(capsys, tmp_path, monkeypatch):
+    from mbox_md import ConvertStats
+
+    stats = ConvertStats(
+        ok=5,
+        out_of_range=3,
+        errors=1,
+        attachment_refs=4,
+        unique_attachments=2,
+        attachment_bytes_referenced=4000,
+        attachment_bytes_stored=1000,
+        elapsed_s=2.0,
+        bytes_total=9,
+    )
+    monkeypatch.setattr("mbox_md._cli.convert", lambda *a, **k: stats)
+    code, out, _ = run(capsys, FIXTURES / "basic.mbox", tmp_path / "out")
+    flat = " ".join(out.split())
+    assert "outside --since/--until" in flat and "dedup saved 3.0 KB, 75%" in flat
+    assert "Failed" in flat and "4 messages/s" in flat
+
+
+def test_progress_bar_path_runs_when_output_is_a_terminal(tmp_path, monkeypatch):
+    # Force rich to treat stderr as a terminal so the progress callbacks run.
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    monkeypatch.setenv("COLUMNS", "120")
+    r = subprocess.run(
+        [sys.executable, "-m", "mbox_md", str(FIXTURES / "basic.mbox"), str(tmp_path / "out"), "--workers", "1"],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0 and "Converting" in r.stderr and "100%" in r.stderr and "messages" in r.stderr
+
+
+def test_zst_early_stop_is_quiet(tmp_path):
+    zstd = __import__("shutil").which("zstd")
+    if not zstd:
+        pytest.skip("zstd CLI not installed")
+    src = tmp_path / "basic.mbox.zst"
+    subprocess.run([zstd, "-q", str(FIXTURES / "basic.mbox"), "-o", str(src)], check=True)
+    with MboxStream(src) as s:
+        first = next(iter(s))  # stop after one message: zstd sees a broken pipe, which must not raise
+    assert b"Plain text only" in first
+
+
+def test_stream_must_be_entered(tmp_path):
+    with pytest.raises(RuntimeError, match="context manager"):
+        list(MboxStream(FIXTURES / "basic.mbox"))
