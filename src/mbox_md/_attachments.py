@@ -58,9 +58,14 @@ class AttachmentStore:
     def __init__(self, outdir: str | Path):
         self.outdir = Path(outdir)
 
-    def put(self, data: bytes, ext: str) -> tuple[str, Path]:
+    @staticmethod
+    def address(data: bytes, ext: str) -> tuple[str, Path]:
+        """Where `data` is (or would be) stored, relative to the output folder. Writes nothing."""
         h = hashlib.sha256(data).hexdigest()[:20]
-        rel = Path("attachments") / h[:2] / f"{h}{ext}"
+        return h, Path("attachments") / h[:2] / f"{h}{ext}"
+
+    def put(self, data: bytes, ext: str) -> tuple[str, Path]:
+        h, rel = self.address(data, ext)
         dest = self.outdir / rel
         if not dest.exists():
             dest.parent.mkdir(parents=True, exist_ok=True)

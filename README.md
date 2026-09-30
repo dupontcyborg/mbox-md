@@ -9,8 +9,21 @@ Work in progress.
 CLI:
 
 ```sh
-uv run mbox-md "All mail Including Spam and Trash.mbox" out/
+mbox-md "All mail Including Spam and Trash.mbox" archive/
+mbox-md takeout.mbox.zst archive/ --since 2020-01-01 --strip-quotes
+mbox-md takeout.mbox --dry-run            # counts and output size, writes nothing
 ```
+
+| Option | What it does |
+|---|---|
+| `--since`, `--until YYYY-MM-DD` | only messages in this date range (undated mail is skipped when a range is set) |
+| `--skip-labels LABELS` | comma-separated Gmail labels to skip; default `Spam,Trash`, `""` keeps everything |
+| `--limit N` | stop after reading N messages |
+| `--min-inline-image SIZE` | drop inline images smaller than this (logos, tracking pixels); default `5KB`, `0` keeps all |
+| `--strip-quotes` | drop quoted replies from bodies |
+| `--workers N` | worker processes; default CPUs − 1 |
+| `--dry-run` | parse and count everything, write nothing |
+| `-q`, `-v`, `--json` | quiet, report each failure, or print stats as JSON |
 
 API:
 

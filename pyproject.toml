@@ -26,6 +26,7 @@ classifiers = [
 ]
 dependencies = [
     "markdownify>=1.2.3",
+    "rich>=15.0.0",
 ]
 
 [project.urls]

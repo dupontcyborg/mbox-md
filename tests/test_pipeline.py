@@ -54,7 +54,7 @@ def test_no_attachments_writes_no_attachment_dir(mbox_file, tmp_path):
 
 
 def test_cli_prints_stats_json(mbox_file, tmp_path, capsys):
-    main([str(mbox_file(make_message())), str(tmp_path / "out"), "--workers", "1"])
+    assert main([str(mbox_file(make_message())), str(tmp_path / "out"), "--workers", "1", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["ok"] == 1
 
 

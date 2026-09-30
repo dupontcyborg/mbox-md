@@ -144,3 +144,31 @@ def extract_body(m: EmailMessage, max_html: int = 2_000_000) -> tuple[str, BodyK
                 body, kind = html_to_md(part_text(alt), max_html), "html"
     body = re.sub(r"\n{3,}", "\n\n", body).strip()
     return body, kind, body_part
+
+
+_ATTRIBUTION = re.compile(r"^\s*(On\b.*|.*\bwrote|.*\bschrieb|.*\ba écrit)\s*:\s*$", re.IGNORECASE)
+_FORWARD_TAIL = re.compile(r"(?im)^\s*(-{2,}\s*(Original Message|Forwarded message)\s*-{2,}|From: .+\nSent: .+)")
+
+
+def strip_quoted_replies(body: str) -> str:
+    """Remove quoted replies: `>` lines, the "On <date>, <name> wrote:" line above them (which mail clients
+    often wrap across two lines), and Outlook-style "Original Message" tails. A heuristic, so it's opt-in."""
+    tail = _FORWARD_TAIL.search(body)
+    if tail:
+        body = body[: tail.start()]
+    lines = body.split("\n")
+    keep = [not line.lstrip().startswith(">") for line in lines]
+    for i in range(len(lines)):
+        if keep[i] or (i > 0 and not keep[i - 1]):
+            continue
+        # First line of a quote block: drop a blank line and an attribution (one or two lines) just above it.
+        j = i - 1
+        while j >= 0 and not lines[j].strip() and keep[j]:
+            j -= 1
+        wrapped = j >= 1 and lines[j - 1].lstrip().startswith("On ") and not lines[j].lstrip().startswith("On ")
+        if wrapped and _ATTRIBUTION.match(lines[j - 1] + " " + lines[j]):
+            keep[j] = keep[j - 1] = False
+        elif j >= 0 and _ATTRIBUTION.match(lines[j]):
+            keep[j] = False
+    text = "\n".join(line for line, k in zip(lines, keep, strict=True) if k)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()

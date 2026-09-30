@@ -8,9 +8,10 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
 from email.message import EmailMessage, Message
+from typing import Literal
 
 from ._attachments import ext_for
-from ._body import BodyKind, extract_body
+from ._body import BodyKind, extract_body, strip_quoted_replies
 from ._naming import safe_name
 from ._options import ConvertOptions
 from ._reader import message_hash
@@ -71,17 +72,30 @@ def parse_date(m: EmailMessage) -> datetime | None:
         return None
 
 
+SkipReason = Literal["label", "date"]
+
+
 def parse_message(raw: bytes, options: ConvertOptions | None = None) -> ParsedMessage | None:
-    """Parse one raw message. Returns None when it carries a label in `options.skip_labels`."""
+    """Parse one raw message. Returns None when `options` filters it out (a skipped label, or out of range)."""
+    result = parse_or_skip(raw, options)
+    return None if isinstance(result, str) else result
+
+
+def parse_or_skip(raw: bytes, options: ConvertOptions | None = None) -> ParsedMessage | SkipReason:
+    """Like `parse_message`, but says why a message was filtered out. Filters run before the body is parsed."""
     options = options or ConvertOptions()
     m = email.message_from_bytes(raw, policy=email.policy.default)
     assert isinstance(m, EmailMessage)
     labels = norm_labels(m)
     if options.skip_labels & set(labels):
-        return None
+        return "label"
     date = parse_date(m)
+    if not options.in_range(date.date() if date else None):
+        return "date"
     subject = str(m["Subject"] or "")
     body, body_kind, body_part = extract_body(m, options.max_html)
+    if options.strip_quotes:
+        body = strip_quoted_replies(body)
     return ParsedMessage(
         key=message_hash(raw),
         message_id=str(m["Message-ID"] or "").strip(),
