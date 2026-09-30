@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: uv sync --locked
+      - run: uv run ruff check src tests .github/scripts
+      - run: uv run ruff format --check src tests .github/scripts
+      - run: uv run mypy
+      - name: Fixtures match the generator
+        run: |
+          uv run python tests/fixtures/generate.py
+          git diff --exit-code -- tests/fixtures
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+      - run: uv run pytest -ra
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: uv build
+      - run: uv run --no-project python .github/scripts/check_dist.py dist
+      - name: Smoke-test the wheel in a clean environment
+        run: |
+          uv run --isolated --no-project --with dist/*.whl mbox-md --version
+          uv run --isolated --no-project --with dist/*.whl python -c "import mbox_md; print(mbox_md.__all__)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/

@@ -1,0 +1,32 @@
+name: Release
+
+# Push a tag like v0.1.0 to publish. The tag must match __version__ in src/mbox_md/__init__.py.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/p/mbox-md
+    permissions:
+      id-token: write # PyPI trusted publishing; no API token is stored anywhere
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Tag matches package version
+        run: |
+          version=$(ls dist/*.whl | sed -E 's#dist/mbox_md-([^-]+)-.*#\1#')
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != version $version"; exit 1; }
+      - uses: pypa/gh-action-pypi-publish@v1.14.2
