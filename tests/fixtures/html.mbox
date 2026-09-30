@@ -1,0 +1,127 @@
+From 1780000000000000000@xxx Mon Jan 15 10:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: Layout newsletter
+Date: Mon, 15 Jan 2024 10:30:00 +0000
+Message-ID: <html.1@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html><html><head><meta charset=3D"utf-8"><title>Newsletter tab titl=
+e</title>
+<style>.btn { color: #fff; } @media (max-width: 600px) { .col { width: 100% }=
+ }</style></head>
+<body><div style=3D"display:none;max-height:0">Hidden preheader text</div>
+<table role=3D"presentation" width=3D"100%"><tr><td>
+  <table><tr><td><img src=3D"https://example.com/logo.png" alt=3D"Example Co =
+logo" width=3D"120"></td></tr></table>
+  <h1>Monthly update</h1>
+  <p>First paragraph of the newsletter.</p><p>Second paragraph, with a <a hre=
+f=3D"https://example.com/post">link</a>.</p>
+  <p><a href=3D"https://example.com/track?id=3D1"><img src=3D"https://example=
+.com/banner.png"></a></p>
+  <p>See <a href=3D"../docs/template.md">the template</a> in the repo.</p>
+  <table><tr><td>Nested footer text</td><td><a href=3D"https://example.com/un=
+subscribe">Unsubscribe</a></td></tr></table>
+</td></tr></table><img src=3D"https://example.com/open.gif" width=3D"1" heigh=
+t=3D"1"></body></html>
+
+From 1780000000000000001@xxx Mon Jan 15 11:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: Receipt with a data table
+Date: Mon, 15 Jan 2024 11:30:00 +0000
+Message-ID: <html.2@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><body><p>Thanks for your order.</p>
+<table><tr><th>Item</th><th>Qty</th><th>Price</th></tr>
+<tr><td>Widget</td><td>2</td><td>$10.00</td></tr><tr><td>Gadget</td><td>1</td=
+><td>$4.50</td></tr></table>
+<p>Total: $24.50</p></body></html>
+
+From 1780000000000000002@xxx Mon Jan 15 12:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: Unclosed head
+Date: Mon, 15 Jan 2024 12:30:00 +0000
+Message-ID: <html.3@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html><html lang=3D"en"><head><meta charset=3D"UTF-8">
+<title>Secure document notice</title><body><p>The body lives inside an unclos=
+ed head.</p></body></html>
+
+From 1780000000000000003@xxx Mon Jan 15 13:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: Whitespace and structure
+Date: Mon, 15 Jan 2024 13:30:00 +0000
+Message-ID: <html.4@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+<html><body><script>trackOpen()</script>
+<p>Spaced&nbsp;&nbsp;&nbsp;&nbsp;out&nbsp;&nbsp;words</p><p>&nbsp;&nbsp;</p>
+<p>line one<br>line two</p><pre><code>keep    this    spacing</code></pre>
+<ul><li>first item</li><li>second item</li></ul></body></html>
+
+From 1780000000000000004@xxx Mon Jan 15 14:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: XHTML
+Date: Mon, 15 Jan 2024 14:30:00 +0000
+Message-ID: <html.5@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<?xml version=3D"1.0" encoding=3D"UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3=
+.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns=3D"http://www.w3.org/1999/xhtml"><body><p>An XHTML message.</p></=
+body></html>
+
+From 1780000000000000005@xxx Mon Jan 15 15:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: Empty plain part
+Date: Mon, 15 Jan 2024 15:30:00 +0000
+Message-ID: <html.6@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============fixture-boundary-0=="
+
+--===============fixture-boundary-0==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+   
+
+--===============fixture-boundary-0==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+<p>The real content is in the HTML part.</p>
+
+--===============fixture-boundary-0==--
+

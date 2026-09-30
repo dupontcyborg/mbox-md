@@ -1,0 +1,129 @@
+From 1780000000000000000@xxx Mon Jan 15 10:30:00 +0000 2024
+From: =?utf-8?q?Zo=C3=AB_Ex=C3=A4mple?= <zoe@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: =?utf-8?b?R3LDvMOfZSB1bmQgS8O8c3NlIPCfjok=?=
+Date: Mon, 15 Jan 2024 10:30:00 +0000
+Message-ID: <encodings.1@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0
+
+UTF-8 everywhere: Ã±, Ã¼, ðŸ˜€.
+
+From 1780000000000000001@xxx Mon Jan 15 11:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: =?utf-8?b?5pel5pys6Kqe44Gu5Lu25ZCN?=
+Date: Mon, 15 Jan 2024 11:30:00 +0000
+Message-ID: <encodings.2@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+A subject with no Latin characters.
+
+From 1780000000000000002@xxx Mon Jan 15 09:30:00 +0000 2024
+From: latin1@example.com
+To: bob@example.org
+Subject: Latin-1 quoted-printable
+Date: Mon, 15 Jan 2024 12:00:00 +0000
+Message-ID: <encodings.3@fixtures.example.com>
+X-Gmail-Labels: Inbox
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+Caf=E9 cr=E8me br=FBl=E9e.
+
+From 1780000000000000003@xxx Mon Jan 15 09:30:00 +0000 2024
+From: odd@example.com
+To: bob@example.org
+Subject: Charset unknown-8bit
+Date: Mon, 15 Jan 2024 13:00:00 +0000
+Message-ID: <encodings.4@fixtures.example.com>
+X-Gmail-Labels: Inbox
+Content-Type: text/plain; charset=unknown-8bit
+Content-Transfer-Encoding: 8bit
+
+café with a raw high byte
+
+From 1780000000000000004@xxx Mon Jan 15 09:30:00 +0000 2024
+From: odd@example.com
+To: bob@example.org
+Subject: Charset x-made-up-charset
+Date: Mon, 15 Jan 2024 13:00:00 +0000
+Message-ID: <encodings.5@fixtures.example.com>
+X-Gmail-Labels: Inbox
+Content-Type: text/plain; charset=x-made-up-charset
+Content-Transfer-Encoding: 8bit
+
+café with a raw high byte
+
+From 1780000000000000005@xxx Mon Jan 15 09:30:00 +0000 2024
+From: base64@example.com
+To: bob@example.org
+Subject: =?utf-8?b?QmFzZTY0IGVuY29kZWQgc3ViamVjdCDinJM=?=
+Date: Mon, 15 Jan 2024 14:00:00 +0000
+Message-ID: <encodings.6@fixtures.example.com>
+X-Gmail-Labels: Inbox
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+
+QSBiYXNlNjQgZW5jb2RlZCBib2R5IOKckw==
+
+From 1780000000000000006@xxx Mon Jan 15 09:30:00 +0000 2024
+From: baddate@example.com
+To: undisclosed-recipients:;
+Subject: Unparseable date
+Date: sometime last tuesday
+Message-ID: <encodings.7@fixtures.example.com>
+X-Gmail-Labels: Inbox
+
+The Date header cannot be parsed.
+
+From 1780000000000000007@xxx Mon Jan 15 09:30:00 +0000 2024
+From: nothing@example.com
+To: bob@example.org
+Message-ID: <encodings.8@fixtures.example.com>
+X-Gmail-Labels: Inbox
+
+No Subject and no Date.
+
+From 1780000000000000008@xxx Mon Jan 15 09:30:00 +0000 2024
+From: <<broken@@example.com
+To: bob@example.org, , <>
+Subject: Malformed address headers
+Date: Mon, 15 Jan 2024 15:00:00 +0000
+Message-ID: <encodings.9@fixtures.example.com>
+X-Gmail-Labels: Inbox
+
+From and To are malformed.
+
+From 1780000000000000009@xxx Wed Jan 31 23:45:00 -0800 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: Sent from UTC-8 late at night
+Date: Wed, 31 Jan 2024 23:45:00 -0800
+Message-ID: <encodings.10@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Plain text body.
+
+From 1780000000000000010@xxx Mon Jan 15 09:30:00 +0000 2024
+From: crlf@example.com
+To: bob@example.org
+Subject: CRLF message in an LF file
+Date: Mon, 15 Jan 2024 16:00:00 +0000
+Message-ID: <encodings.11@fixtures.example.com>
+X-Gmail-Labels: Inbox
+
+This message uses CRLF line endings.
+

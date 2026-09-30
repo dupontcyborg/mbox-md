@@ -1,0 +1,28 @@
+From 1780000000000000000@xxx Mon Jan 15 10:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: CRLF one
+Date: Mon, 15 Jan 2024 10:30:00 +0000
+Message-ID: <crlf.1@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+First CRLF message.
+
+From 1780000000000000001@xxx Mon Jan 15 11:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: CRLF two
+Date: Mon, 15 Jan 2024 11:30:00 +0000
+Message-ID: <crlf.2@fixtures.example.com>
+X-Gmail-Labels: Inbox
+X-GM-THRID: 1790000000000000001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Second CRLF message.
+
