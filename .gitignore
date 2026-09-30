@@ -15,6 +15,7 @@ _unparsed/
 !tests/fixtures/**
 
 # Python
+src/mbox_md/_version.py
 __pycache__/
 *.py[cod]
 .venv/

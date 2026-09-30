@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag like v0.1.0 to publish. The tag must match __version__ in src/mbox_md/__init__.py.
+# Push a tag like v0.1.0 to publish. The package version is taken from the tag (hatch-vcs).
 on:
   push:
     tags: ["v*"]

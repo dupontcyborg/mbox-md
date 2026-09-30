@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.27"]
+requires = ["hatchling>=1.27", "hatch-vcs>=0.4"]
 build-backend = "hatchling.build"
 
 [project]
@@ -46,8 +46,12 @@ dev = [
     "types-beautifulsoup4>=4.12.0.20250516",
 ]
 
+# The version comes from the git tag.
 [tool.hatch.version]
-path = "src/mbox_md/__init__.py"
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/mbox_md/_version.py"
 
 # Allow-list what ships, so local-data/ or stray real mail can never be packaged.
 [tool.hatch.build.targets.sdist]

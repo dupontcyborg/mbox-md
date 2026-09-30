@@ -14,8 +14,7 @@ from ._options import ConvertOptions
 from ._parse import AttachmentPart, ParsedMessage, parse_message
 from ._pipeline import ConvertStats, WorkerError, convert
 from ._reader import ReadError, iter_messages
-
-__version__ = "0.1.0.dev0"
+from ._version import __version__
 
 __all__ = [
     "AttachmentPart",
