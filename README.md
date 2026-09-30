@@ -1,8 +1,16 @@
 # mbox-md
 
+[![PyPI](https://img.shields.io/pypi/v/mbox-md)](https://pypi.org/project/mbox-md/) [![Python](https://img.shields.io/pypi/pyversions/mbox-md)](https://pypi.org/project/mbox-md/) [![CI](https://github.com/dupontcyborg/mbox-md/actions/workflows/ci.yml/badge.svg)](https://github.com/dupontcyborg/mbox-md/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/pypi/l/mbox-md)](./LICENSE)
+
 Convert a Gmail Takeout (or other) `.mbox` archive into one Markdown file per message, organized by year and month, with attachments stored once and shared across messages.
 
-Work in progress.
+## Install
+
+```sh
+uv tool install mbox-md     # or: pipx install mbox-md
+```
+
+To use it as a library, `pip install mbox-md` (or `uv add mbox-md`). Requires Python 3.11+.
 
 ## Usage
 
