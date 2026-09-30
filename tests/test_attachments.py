@@ -1,6 +1,7 @@
-import pytest
+from urllib.parse import quote
 
-from mbox_md.attachments import AttachmentStore, ext_for
+from mbox_md.attachments import AttachmentStore, StoredAttachment, ext_for
+from mbox_md.writer import AttachmentIndex
 
 
 def test_ext_for_prefers_filename_suffix():
@@ -30,14 +31,52 @@ def test_store_keeps_different_content_apart(tmp_path):
     assert store.put(b"one", ".txt")[1] != store.put(b"two", ".txt")[1]
 
 
-@pytest.mark.xfail(strict=True, reason="TODO bug: same bytes with different extensions are stored twice")
-def test_store_dedupes_same_content_with_different_extensions(tmp_path):
-    store = AttachmentStore(tmp_path)
-    store.put(b"same bytes", ".txt")
-    store.put(b"same bytes", ".dat")
-    assert len([p for p in (tmp_path / "attachments").rglob("*") if p.is_file()]) == 1
+def test_ext_for_rejects_numeric_suffix_from_version_names():
+    assert ext_for("release-v1.8", "application/pdf") == ".pdf"
 
 
-@pytest.mark.xfail(strict=True, reason="TODO bug: ext_for accepts meaningless hex suffixes as extensions")
+def test_ext_for_keeps_short_unknown_but_plausible_suffixes():
+    assert ext_for("design.sketch", "application/octet-stream") == ".sketch"
+
+
+def test_index_consolidates_same_bytes_stored_under_two_extensions(tmp_path):
+    store, index = AttachmentStore(tmp_path), AttachmentIndex()
+    h, jpg = store.put(b"same bytes", ".jpg")
+    _, jpeg = store.put(b"same bytes", ".jpeg")
+    for msg, rel, name in (("a.md", jpg, "photo.jpg"), ("b.md", jpeg, "photo.jpeg"), ("c.md", jpeg, "photo.jpeg")):
+        (tmp_path / msg).write_text(f'attachments: ["{rel}"]\n- [{name}]({quote(str(rel))})\n')
+        index.add(msg, [StoredAttachment(h, str(rel), name, 10, "image/jpeg")])
+
+    assert index.consolidate(tmp_path) == 1
+    # Both are known extensions, so the one used by more references wins.
+    assert index.entries[h].path == str(jpeg)
+    assert not (tmp_path / jpg).exists() and (tmp_path / jpeg).exists()
+    for msg in ("a.md", "b.md", "c.md"):
+        assert str(jpeg) in (tmp_path / msg).read_text() and str(jpg) not in (tmp_path / msg).read_text()
+
+
+def test_index_prefers_known_extension_over_popular_unknown_one(tmp_path):
+    index = AttachmentIndex()
+    refs = [("a.md", "attachments/ab/ab.weird"), ("b.md", "attachments/ab/ab.weird"), ("c.md", "attachments/ab/ab.pdf")]
+    for msg, rel in refs:
+        index.add(msg, [StoredAttachment("ab", rel, "x", 1, "application/pdf")])
+    assert index.entries["ab"].path == "attachments/ab/ab.pdf"
+
+
+def test_consolidation_never_corrupts_a_path_that_extends_the_old_one(tmp_path):
+    index = AttachmentIndex()
+    md = tmp_path / "m.md"
+    md.write_text("[a](../attachments/ab/ab.htm) [b](../attachments/ab/ab.html)\n")
+    for rel in ("attachments/ab/ab.html", "attachments/ab/ab.html", "attachments/ab/ab.htm"):
+        index.add("m.md", [StoredAttachment("ab", rel, "x", 1, "text/html")])
+    index.consolidate(tmp_path)
+    assert md.read_text() == "[a](../attachments/ab/ab.html) [b](../attachments/ab/ab.html)\n"
+
+
 def test_ext_for_ignores_hex_junk_suffix():
     assert ext_for("report.e3fc6c20", "application/pdf") == ".pdf"
+
+
+def test_ext_for_rejects_short_hex_ids():
+    assert ext_for("report.a9e7c5", "application/pdf") == ".pdf"
+    assert ext_for("song.mp3", "application/octet-stream") == ".mp3"

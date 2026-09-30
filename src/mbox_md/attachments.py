@@ -13,9 +13,24 @@ MAGIC = [
 ]  # fmt: skip
 
 
+def is_known_ext(ext: str) -> bool:
+    return ext in mimetypes.types_map or ext in mimetypes.common_types
+
+
+def plausible_suffix(suf: str) -> bool:
+    """A filename suffix worth trusting: one mimetypes knows, or a short one that starts with a letter.
+
+    Rejects junk such as `.e3fc6c20` (hex ids after a dot) or `.8` from names like `v1.8`.
+    """
+    if is_known_ext(suf):
+        return True
+    looks_like_hex_id = len(suf) >= 5 and re.fullmatch(r"\.[0-9a-f]*[0-9][0-9a-f]*", suf) is not None
+    return re.fullmatch(r"\.[a-z][a-z0-9]{0,5}", suf) is not None and not looks_like_hex_id
+
+
 def ext_for(name: str, ctype: str, data: bytes = b"") -> str:
     suf = Path(name).suffix.lower()
-    if suf and re.fullmatch(r"\.[a-z0-9]{1,8}", suf):
+    if suf and plausible_suffix(suf):
         return suf
     guess = mimetypes.guess_extension(ctype)
     if guess and ctype != "application/octet-stream":

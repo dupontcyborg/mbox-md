@@ -173,16 +173,20 @@ def test_attachment_links_and_index_resolve(converted):
         assert (c.out / entry["path"]).is_file()
 
 
-@pytest.mark.xfail(strict=True, reason="TODO bug: same bytes with a different extension are stored twice")
 def test_same_bytes_with_junk_extension_share_one_file(converted):
     c = converted("attachments")
     assert c["Same bytes, junk extension"]["fm"]["attachments"] == c["Report attached"]["fm"]["attachments"]
     assert len(c.attachment_files()) == len(c.index())
 
 
-@pytest.mark.xfail(strict=True, reason="TODO bug: message/rfc822 parts are skipped as multipart, so forwards vanish")
-def test_forwarded_message_is_kept(converted):
-    assert attachment_names(converted("attachments")["Fwd: The original"])
+def test_forwarded_message_is_kept_as_eml(converted):
+    c = converted("attachments")
+    m = c["Fwd: The original"]
+    assert attachment_names(m) == ["The original.eml"]
+    [path] = m["fm"]["attachments"]
+    saved = (c.out / path).read_bytes()
+    assert path.endswith(".eml") and b"Subject: The original" in saved and b"Forwarded body." in saved
+    assert "Forwarded body." not in m["body"]
 
 
 # --- html ------------------------------------------------------------------------------------------------------
@@ -221,9 +225,9 @@ def test_hidden_preheader_is_dropped(converted):
     assert "Hidden preheader text" not in converted("html")["Layout newsletter"]["body"]
 
 
-@pytest.mark.xfail(strict=True, reason="TODO bug: relative links from email bodies point nowhere in the output")
-def test_relative_links_are_not_kept(converted):
-    assert "](../docs/template.md)" not in converted("html")["Layout newsletter"]["body"]
+def test_relative_links_keep_their_text_only(converted):
+    body = converted("html")["Layout newsletter"]["body"]
+    assert "](../docs/template.md)" not in body and "See the template in the repo." in body
 
 
 # --- encodings -------------------------------------------------------------------------------------------------
@@ -243,9 +247,8 @@ def test_encodings(converted):
     assert "From and To are malformed." in c["Malformed address headers"]["body"]
 
 
-@pytest.mark.xfail(strict=True, reason="TODO bug: a malformed From header is parsed to '<>' and the sender is lost")
 def test_malformed_from_header_keeps_raw_value(converted):
-    assert "broken" in converted("encodings")["Malformed address headers"]["fm"]["from"]
+    assert converted("encodings")["Malformed address headers"]["fm"]["from"] == "<<broken@@example.com"
 
 
 def test_missing_and_bad_dates_go_to_undated(converted):

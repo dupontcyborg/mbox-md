@@ -11,7 +11,7 @@ Or, without writing anything:
 
 from .options import ConvertOptions
 from .parse import AttachmentPart, ParsedMessage, parse_message
-from .pipeline import ConvertStats, convert
+from .pipeline import ConvertStats, WorkerError, convert
 from .reader import iter_messages
 
 __version__ = "0.1.0.dev0"
@@ -24,5 +24,6 @@ __all__ = [
     "__version__",
     "convert",
     "iter_messages",
+    "WorkerError",
     "parse_message",
 ]

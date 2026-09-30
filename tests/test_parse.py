@@ -128,3 +128,22 @@ def test_unclosed_head_does_not_swallow_body():
     html = "<html><head><meta charset='UTF-8'><title>Tab title</title><body><p>The actual message.</p></body></html>"
     body = parse_message(make_message(body=None, html=html)).body
     assert "The actual message." in body and "Tab title" not in body
+
+
+def test_dead_links_are_unwrapped_and_protocol_relative_links_fixed():
+    html = (
+        '<p><a href="../docs/x.md">relative</a> <a href="#top">fragment</a> <a href="javascript:void(0)">js</a> '
+        '<a href="//example.com/a">protocol-relative</a> <a href="mailto:a@example.com">mail</a></p>'
+    )
+    body = parse_message(make_message(body=None, html=html)).body
+    assert body.startswith("relative fragment js [protocol-relative](https://example.com/a)")
+    assert "[mail](mailto:a@example.com)" in body
+
+
+def test_malformed_from_falls_back_to_raw_header():
+    raw = b"From: <<broken@@example.com\nMessage-ID: <m@example.test>\nSubject: x\n\nbody\n"
+    assert parse_message(raw).from_ == "<<broken@@example.com"
+
+
+def test_well_formed_from_is_unchanged():
+    assert parse_message(make_message()).from_ == "Alice Example <alice@example.test>"

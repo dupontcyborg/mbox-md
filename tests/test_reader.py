@@ -1,4 +1,3 @@
-import pytest
 from conftest import SEP, make_mbox, make_message
 
 from mbox_md.reader import iter_messages, message_key, split_messages
@@ -37,7 +36,6 @@ def test_message_key_without_message_id_hashes_headers():
     assert message_key(a) == message_key(a)
 
 
-@pytest.mark.xfail(strict=True, reason="TODO bug: message_key splits headers on \\n\\n, so CRLF mail hashes the body")
 def test_message_key_ignores_body_for_crlf_mail():
     a = b"Subject: x\r\n\r\nbody one\r\n"
     b = b"Subject: x\r\n\r\nbody two\r\n"

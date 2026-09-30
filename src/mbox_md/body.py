@@ -4,6 +4,7 @@ import codecs
 import re
 from email.message import EmailMessage, Message
 from typing import Literal
+from urllib.parse import urlsplit
 
 BodyKind = Literal["plain", "html"]
 
@@ -41,6 +42,7 @@ def html_to_md(html: str, max_html: int = 2_000_000) -> str:
         tag.decompose()
     for head in soup.find_all("head"):
         head.unwrap()
+    unwrap_dead_links(soup)
     unwrap_layout_tables(soup)
     converter = MarkdownConverter(
         heading_style="ATX",
@@ -49,6 +51,19 @@ def html_to_md(html: str, max_html: int = 2_000_000) -> str:
         escape_underscores=False,
     )
     return tidy_whitespace(converter.convert_soup(soup))
+
+
+def unwrap_dead_links(soup) -> None:
+    """Keep the text of links that can't resolve outside the original page: relative paths, `#fragments`,
+    `javascript:`. Protocol-relative links (`//host/path`) become https."""
+    for a in soup.find_all("a", href=True):
+        href = a["href"].strip()
+        if href.startswith("//"):
+            a["href"] = "https:" + href
+            continue
+        scheme = urlsplit(href).scheme.lower()
+        if not scheme or scheme == "javascript":
+            a.unwrap()
 
 
 _TABLE_PARTS = ("thead", "tbody", "tfoot", "tr", "td", "th")

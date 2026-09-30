@@ -1,9 +1,11 @@
 """Orchestrate a conversion: read, dedup, convert in a worker pool, and write the indexes."""
 
 import functools
-import multiprocessing as mp
+import itertools
 import time
 from collections.abc import Callable, Iterator
+from concurrent.futures import FIRST_COMPLETED, Future, ProcessPoolExecutor, wait
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -65,6 +67,35 @@ def convert_one(raw: bytes, outdir: Path, options: ConvertOptions) -> dict[str, 
         return {"status": "error", "error": repr(e), "path": write_unparsed(outdir, message_hash(raw), raw)}
 
 
+CHUNK = 16  # messages per task sent to a worker
+IN_FLIGHT_PER_WORKER = 4  # bounds memory: at most workers * 4 * CHUNK raw messages are held at once
+
+
+def convert_chunk(raws: list[bytes], outdir: Path, options: ConvertOptions) -> list[dict[str, Any]]:
+    return [convert_one(raw, outdir, options) for raw in raws]
+
+
+def run_parallel(work: Callable[[list[bytes]], list[dict[str, Any]]], messages: Iterator[bytes], workers: int):
+    """Yield results as workers finish, feeding the pool lazily so the mbox is never held in memory."""
+    chunks = iter(lambda: list(itertools.islice(messages, CHUNK)), [])
+    with ProcessPoolExecutor(workers) as ex:
+        pending: set[Future] = set()
+        for chunk in chunks:
+            pending.add(ex.submit(work, chunk))
+            if len(pending) >= workers * IN_FLIGHT_PER_WORKER:
+                done, pending = wait(pending, return_when=FIRST_COMPLETED)
+                for f in done:
+                    yield from f.result()
+        while pending:
+            done, pending = wait(pending, return_when=FIRST_COMPLETED)
+            for f in done:
+                yield from f.result()
+
+
+class WorkerError(RuntimeError):
+    """A worker process failed to start or died mid-run."""
+
+
 def convert(
     src: str | Path,
     outdir: str | Path,
@@ -96,10 +127,14 @@ def convert(
             yield raw
 
     index = AttachmentIndex()
-    work = functools.partial(convert_one, outdir=outdir, options=options)
+    if options.workers <= 1:
+        results = (convert_one(raw, outdir, options) for raw in feed())
+    else:
+        work = functools.partial(convert_chunk, outdir=outdir, options=options)
+        results = run_parallel(work, feed(), options.workers)
     t0 = time.time()
-    with mp.Pool(options.workers) as pool, open(outdir / "messages.jsonl", "w") as mf:
-        for r in pool.imap_unordered(work, feed(), chunksize=16):
+    with open(outdir / "messages.jsonl", "w") as mf:
+        for r in _raise_worker_errors(results):
             if r["status"] == "ok":
                 stats.ok += 1
                 field = f"body_{r['body_kind'] or 'none'}"
@@ -117,9 +152,21 @@ def convert(
             if on_progress:
                 on_progress(stats)
 
+    index.consolidate(outdir)
     index.write(outdir)
     stats.unique_attachments = len(index.entries)
     stats.attachment_bytes_referenced = index.referenced_bytes
     stats.attachment_bytes_stored = index.unique_bytes
     stats.elapsed_s = round(time.time() - t0, 1)
     return stats
+
+
+def _raise_worker_errors(results: Iterator[dict[str, Any]]) -> Iterator[dict[str, Any]]:
+    try:
+        yield from results
+    except BrokenProcessPool as e:
+        raise WorkerError(
+            "a worker process failed to start or crashed. Worker processes re-import the calling script, so "
+            "call convert() from a script file under `if __name__ == '__main__':`, or pass workers=1 "
+            "(for example from a REPL, stdin, or some notebooks)."
+        ) from e

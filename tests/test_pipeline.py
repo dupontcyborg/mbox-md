@@ -1,5 +1,7 @@
 import json
 import re
+import subprocess
+import sys
 from urllib.parse import unquote
 
 from conftest import make_message
@@ -48,3 +50,23 @@ def test_no_attachments_writes_no_attachment_dir(mbox_file, tmp_path):
 def test_cli_prints_stats_json(mbox_file, tmp_path, capsys):
     main([str(mbox_file(make_message())), str(tmp_path / "out"), "--workers", "1"])
     assert json.loads(capsys.readouterr().out)["ok"] == 1
+
+
+def test_parallel_workers_match_in_process(mbox_file, tmp_path):
+    msgs = [make_message(message_id=f"<{i}@x>", subject=f"Message {i}") for i in range(40)]
+    src = mbox_file(*msgs)
+    serial = convert(src, tmp_path / "serial", ConvertOptions(workers=1))
+    parallel = convert(src, tmp_path / "parallel", ConvertOptions(workers=3))
+    assert (serial.ok, parallel.ok) == (40, 40)
+    files = lambda d: sorted(str(p.relative_to(d)) for p in d.rglob("*.md"))  # noqa: E731
+    assert files(tmp_path / "serial") == files(tmp_path / "parallel")
+
+
+def test_unstartable_workers_raise_instead_of_hanging(mbox_file, tmp_path):
+    # From stdin, spawned workers can't re-import __main__. This used to hang forever.
+    src = mbox_file(make_message())
+    code = (
+        f"import mbox_md; mbox_md.convert({str(src)!r}, {str(tmp_path / 'out')!r}, mbox_md.ConvertOptions(workers=2))"
+    )
+    r = subprocess.run([sys.executable, "-"], input=code, text=True, capture_output=True, timeout=60)
+    assert r.returncode != 0 and "WorkerError" in r.stderr

@@ -52,7 +52,7 @@ def iter_messages(path: str | Path) -> Iterator[bytes]:
 
 def message_key(raw: bytes) -> bytes:
     """The Message-ID, or a hash of the headers when there is none. Used for dedup."""
-    head = raw.split(b"\n\n", 1)[0]
+    head = re.split(rb"\r?\n\r?\n", raw, maxsplit=1)[0]
     m = re.search(rb"(?im)^message-id:\s*(<[^>]+>)", head)
     return m.group(1) if m else hashlib.sha1(head).digest()
 
