@@ -51,7 +51,7 @@ path = "src/mbox_md/__init__.py"
 
 # Allow-list what ships, so local-data/ or stray real mail can never be packaged.
 [tool.hatch.build.targets.sdist]
-only-include = ["src/mbox_md", "tests", "pyproject.toml", "README.md", "TODO.md", "LICENSE"]
+only-include = ["src/mbox_md", "tests", "pyproject.toml", "README.md", "LICENSE"]
 exclude = ["tests/**/*.mbox.zst"]
 
 [tool.hatch.build.targets.wheel]

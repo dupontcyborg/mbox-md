@@ -263,7 +263,7 @@ def test_missing_and_bad_dates_go_to_undated(converted):
 
 
 def test_dates_use_the_senders_timezone(converted):
-    # Documents current behavior; see the timezone item in TODO.md.
+    # The default (--tz sender) files mail under the sender's own calendar day; see test_robustness for --tz.
     m = converted("encodings")["Sent from UTC-8 late at night"]
     assert m["fm"]["date"] == "2024-01-31T23:45:00-08:00"
     assert m["path"].parent.relative_to(m["path"].parents[2]) == Path("2024/01")

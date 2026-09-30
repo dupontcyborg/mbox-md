@@ -21,7 +21,7 @@ SDIST_ALLOWED = [
     r"src/mbox_md/py\.typed",
     r"tests/[_a-z]+\.py",
     r"tests/fixtures/(generate\.py|README\.md|[a-z]+\.mbox)",
-    r"(pyproject\.toml|README\.md|TODO\.md|LICENSE|PKG-INFO|\.gitignore)",
+    r"(pyproject\.toml|README\.md|LICENSE|PKG-INFO|\.gitignore)",
 ]
 
 
