@@ -20,10 +20,14 @@ mbox-md takeout.mbox archive/ --compress-source zstd --delete-source
 | `--since`, `--until YYYY-MM-DD` | only messages in this date range (undated mail is skipped when a range is set) |
 | `--skip-labels LABELS` | comma-separated Gmail labels to skip; default `Spam,Trash`, `""` keeps everything |
 | `--limit N` | stop after reading N messages |
+| `--tz ZONE` | timezone for folder and file names and `--since`/`--until`: `sender` (default), `utc`, `local`, or an IANA name |
 | `--min-inline-image SIZE` | drop inline images smaller than this (logos, tracking pixels); default `5KB`, `0` keeps all |
 | `--strip-quotes` | drop quoted replies from bodies |
+| `--keep-from-escapes` | don't undo mboxrd `>From ` escaping (for mboxo files) |
 | `--workers N` | worker processes; default CPUs − 1 |
 | `--dry-run` | parse and count everything, write nothing |
+| `--incremental` | convert only messages not already in the output (a newer export, or resuming a stopped run) |
+| `--prune` | delete files that earlier runs wrote into the output and this run didn't |
 | `--compress-source zstd\|gzip` | after converting, compress the input mbox next to it and verify it by decompressing it in full |
 | `--compress-level 1-10` | compression level, 1 fastest to 10 smallest (default 5) |
 | `--delete-source` | delete the original mbox, only after the compressed copy verifies |

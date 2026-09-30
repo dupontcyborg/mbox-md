@@ -170,6 +170,11 @@ def labels() -> Mbox:
     second = build("<labels.dup@fixtures.example.com>", subject="Duplicate, second copy", labels="Sent")
     mb.add(finish(first))
     mb.add(finish(second))
+    # The same message twice, first as a Spam copy: the Inbox copy must still be converted.
+    spam = build("<labels.spamfirst@fixtures.example.com>", subject="Spam copy first", labels="Spam")
+    inbox = build("<labels.spamfirst@fixtures.example.com>", subject="Spam copy first", labels="Inbox,Starred")
+    mb.add(finish(spam))
+    mb.add(finish(inbox))
     mb.add(finish(build(None, subject="No Message-ID one", body="First message without a Message-ID.")))
     mb.add(finish(build(None, subject="No Message-ID two", body="Second message without a Message-ID.")))
     return mb
@@ -371,12 +376,53 @@ def crlf() -> Mbox:
     return mb
 
 
-FIXTURES = {"basic": basic, "labels": labels, "attachments": attachments, "html": html,
+def mailclient() -> Mbox:
+    """A non-Gmail mbox, as mail clients write it: `From <sender> <asctime>` separators and mboxrd escaping."""
+    lines = [
+        "From alice@example.com Mon Jan  5 09:30:00 2024",
+        "From: Alice Example <alice@example.com>",
+        "To: bob@example.org",
+        "Subject: Client-written message",
+        "Date: Mon, 05 Jan 2024 09:30:00 +0000",
+        "Message-ID: <mailclient.1@fixtures.example.com>",
+        "",
+        "Quoting the old archive:",
+        "",
+        ">From the escaped line, which should read 'From the escaped line'.",
+        ">>From a doubly escaped line.",
+        "",
+        "From MAILER-DAEMON Fri Jul  8 12:08:34 2011",
+        "From: Mail Delivery System <mailer-daemon@example.net>",
+        "To: alice@example.com",
+        "Subject: Undeliverable",
+        "Date: Fri, 08 Jul 2011 12:08:34 +0000",
+        "Message-ID: <mailclient.2@fixtures.example.com>",
+        "",
+        "Bounce body.",
+        "",
+        "From carol@example.net Thu Jan  1 00:00:00 UTC 1970",
+        "From: carol@example.net",
+        "Subject: Epoch, with a timezone name in the separator",
+        "Date: Thu, 01 Jan 1970 00:00:00 +0000",
+        "Message-ID: <mailclient.3@fixtures.example.com>",
+        "",
+        "Old.",
+        "",
+    ]
+    mb = Mbox("mailclient")
+    mb.raw_file = "\n".join(lines).encode()
+    return mb
+
+
+FIXTURES = {"basic": basic, "mailclient": mailclient, "labels": labels, "attachments": attachments, "html": html,
             "encodings": encodings, "separators": separators, "crlf": crlf}  # fmt: skip
 
 
 def render_all() -> dict[str, bytes]:
-    out = {f"{name}.mbox": fn().to_bytes() for name, fn in FIXTURES.items()}
+    out = {}
+    for name, fn in FIXTURES.items():
+        mb = fn()
+        out[f"{name}.mbox"] = getattr(mb, "raw_file", None) or mb.to_bytes()
     out["crlf.mbox"] = out["crlf.mbox"].replace(b"\n", b"\r\n")
     out["empty.mbox"] = b""
     return out

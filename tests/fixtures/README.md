@@ -7,11 +7,12 @@ To add or change a fixture, edit `generate.py` and run `uv run python tests/fixt
 | Fixture | Covers |
 |---|---|
 | `basic.mbox` | plain, HTML-only, and multipart/alternative bodies; reply prefixes, accented and very long subjects; Cc; quoted replies |
-| `labels.mbox` | Spam and Trash skipping, folded and missing label headers, duplicate Message-IDs, messages without a Message-ID |
+| `labels.mbox` | Spam and Trash skipping, folded and missing label headers, duplicate Message-IDs (including a Spam copy before an Inbox copy), messages without a Message-ID |
 | `attachments.mbox` | content-addressed dedup, same name with different bytes, junk extensions, inline image filtering, unnamed octet-stream sniffing, path-traversal filenames, attachment-only mail, `.ics`, forwarded `message/rfc822` |
 | `html.mbox` | layout tables vs data tables, `<head>`/`<style>`/`<script>` removal, unclosed `<head>`, `&nbsp;` padding, `<br>`, `<pre>`, XHTML, empty plain part with HTML fallback |
 | `encodings.mbox` | UTF-8 and RFC 2047 headers, non-Latin subjects, Latin-1 quoted-printable, `unknown-8bit` and bogus charsets, base64 bodies, unparseable or missing dates, malformed addresses, a CRLF message, a non-UTC sender |
 | `separators.mbox` | `From ` lines in bodies, mboxrd `>From ` escaping, a Gmail-style separator line not preceded by a blank line |
+| `mailclient.mbox` | a non-Gmail mbox: `From <sender> <asctime>` separators, MAILER-DAEMON, a timezone name, and mboxrd `>From ` escaping |
 | `crlf.mbox` | a whole mbox with CRLF line endings |
 | `empty.mbox` | a zero-byte mbox |
 

@@ -28,6 +28,7 @@ dependencies = [
     "compress-utils>=0.8.0",
     "markdownify>=1.2.3",
     "rich>=15.0.0",
+    "tzdata>=2026.4 ; sys_platform == 'win32'",
 ]
 
 [project.urls]

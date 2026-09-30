@@ -110,6 +110,34 @@ Plain text body.
 From 1780000000000000008@xxx Mon Jan 15 09:30:00 +0000 2024
 From: Alice Example <alice@example.com>
 To: Bob Example <bob@example.org>, carol@example.net
+Subject: Spam copy first
+Date: Mon, 15 Jan 2024 09:30:00 +0000
+Message-ID: <labels.spamfirst@fixtures.example.com>
+X-Gmail-Labels: Spam
+X-GM-THRID: 1790000000000000001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Plain text body.
+
+From 1780000000000000009@xxx Mon Jan 15 09:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
+Subject: Spam copy first
+Date: Mon, 15 Jan 2024 09:30:00 +0000
+Message-ID: <labels.spamfirst@fixtures.example.com>
+X-Gmail-Labels: Inbox,Starred
+X-GM-THRID: 1790000000000000001
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Plain text body.
+
+From 1780000000000000010@xxx Mon Jan 15 09:30:00 +0000 2024
+From: Alice Example <alice@example.com>
+To: Bob Example <bob@example.org>, carol@example.net
 Subject: No Message-ID one
 Date: Mon, 15 Jan 2024 09:30:00 +0000
 X-Gmail-Labels: Inbox
@@ -120,7 +148,7 @@ MIME-Version: 1.0
 
 First message without a Message-ID.
 
-From 1780000000000000009@xxx Mon Jan 15 09:30:00 +0000 2024
+From 1780000000000000011@xxx Mon Jan 15 09:30:00 +0000 2024
 From: Alice Example <alice@example.com>
 To: Bob Example <bob@example.org>, carol@example.net
 Subject: No Message-ID two

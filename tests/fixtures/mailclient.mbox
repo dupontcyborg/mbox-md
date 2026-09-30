@@ -1,0 +1,28 @@
+From alice@example.com Mon Jan  5 09:30:00 2024
+From: Alice Example <alice@example.com>
+To: bob@example.org
+Subject: Client-written message
+Date: Mon, 05 Jan 2024 09:30:00 +0000
+Message-ID: <mailclient.1@fixtures.example.com>
+
+Quoting the old archive:
+
+>From the escaped line, which should read 'From the escaped line'.
+>>From a doubly escaped line.
+
+From MAILER-DAEMON Fri Jul  8 12:08:34 2011
+From: Mail Delivery System <mailer-daemon@example.net>
+To: alice@example.com
+Subject: Undeliverable
+Date: Fri, 08 Jul 2011 12:08:34 +0000
+Message-ID: <mailclient.2@fixtures.example.com>
+
+Bounce body.
+
+From carol@example.net Thu Jan  1 00:00:00 UTC 1970
+From: carol@example.net
+Subject: Epoch, with a timezone name in the separator
+Date: Thu, 01 Jan 1970 00:00:00 +0000
+Message-ID: <mailclient.3@fixtures.example.com>
+
+Old.

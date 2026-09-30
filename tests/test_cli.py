@@ -142,7 +142,7 @@ def test_since_and_until(capsys, tmp_path):
 
 def test_skip_labels_empty_keeps_spam_and_trash(capsys, tmp_path):
     stats = run_json(capsys, FIXTURES / "labels.mbox", tmp_path / "out", "--skip-labels", "")
-    assert (stats["ok"], stats["skipped"]) == (9, 0)
+    assert (stats["ok"], stats["skipped"]) == (10, 0)
 
 
 def test_skip_labels_custom(capsys, tmp_path):

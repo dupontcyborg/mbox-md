@@ -6,7 +6,6 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
-from typing import TextIO
 from urllib.parse import quote
 
 from ._attachments import StoredAttachment, is_known_ext
@@ -23,10 +22,6 @@ def write_unparsed(outdir: Path, key: str, raw: bytes) -> str:
     d.mkdir(parents=True, exist_ok=True)
     (d / f"{key}.eml").write_bytes(raw)
     return f"_unparsed/{key}.eml"
-
-
-def write_manifest_line(f: TextIO, message_id: str, path: str, subject: str) -> None:
-    f.write(json.dumps({"message_id": message_id, "path": path, "subject": subject}, ensure_ascii=False) + "\n")
 
 
 @dataclass

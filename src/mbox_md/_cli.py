@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from . import __version__
 from ._compression import CompressionError, CompressResult, compress_mbox, detect
-from ._options import ConvertOptions, default_workers
+from ._options import ConvertOptions, default_workers, resolve_tz
 from ._pipeline import ConvertStats, WorkerError, convert
 from ._reader import ReadError
 
@@ -73,6 +73,13 @@ def build_parser() -> argparse.ArgumentParser:
         help='comma-separated Gmail labels to skip (default: Spam,Trash; "" keeps everything)',
     )
     sel.add_argument("--limit", type=int, metavar="N", help="stop after reading N messages")
+    sel.add_argument(
+        "--tz",
+        default="sender",
+        metavar="ZONE",
+        help="timezone for folder/file names and --since/--until: sender (default: each message's own), utc, "
+        "local, or an IANA name like Europe/Paris",
+    )
 
     content = ap.add_argument_group("content")
     content.add_argument(
@@ -83,10 +90,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="drop inline images smaller than this, e.g. logos and tracking pixels (default: 5KB; 0 keeps all)",
     )
     content.add_argument("--strip-quotes", action="store_true", help="drop quoted replies from message bodies")
+    content.add_argument(
+        "--keep-from-escapes",
+        action="store_true",
+        help="don't undo mboxrd '>From ' escaping (use for mboxo files, where '>From ' is literal text)",
+    )
 
     run = ap.add_argument_group("running")
     run.add_argument("--workers", type=int, default=default_workers(), help="worker processes (default: CPUs - 1)")
     run.add_argument("--dry-run", action="store_true", help="count messages and estimate output size; write nothing")
+    reruns = run.add_mutually_exclusive_group()
+    reruns.add_argument(
+        "--incremental",
+        action="store_true",
+        help="only convert messages not already in OUTDIR (new mail from a newer export, or resuming a stopped run)",
+    )
+    reruns.add_argument(
+        "--prune", action="store_true", help="delete files that earlier runs wrote into OUTDIR and this run didn't"
+    )
 
     keep = ap.add_argument_group("compressing the source mbox (after a successful conversion)")
     keep.add_argument(
@@ -124,6 +145,12 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--compress-source can't be combined with --dry-run")
     if not 1 <= a.compress_level <= 10:
         ap.error("--compress-level must be 1 to 10")
+    if (a.incremental or a.prune) and a.dry_run:
+        ap.error("--incremental and --prune can't be combined with --dry-run")
+    try:
+        resolve_tz(a.tz)
+    except ValueError as e:
+        ap.error(str(e))
     if a.compress_source and a.mbox.is_file() and detect(a.mbox) is not None:
         ap.error(f"{a.mbox} is already compressed")
 
@@ -136,6 +163,10 @@ def main(argv: list[str] | None = None) -> int:
         since=a.since,
         until=a.until,
         strip_quotes=a.strip_quotes,
+        tz=a.tz,
+        unescape_from=not a.keep_from_escapes,
+        incremental=a.incremental,
+        prune=a.prune,
         dry_run=a.dry_run,
         workers=a.workers,
         limit=a.limit,
@@ -257,8 +288,12 @@ def _print_summary(console: Console, s: ConvertStats, outdir: Path) -> None:
         t.add_row("", f"{s.skipped:,}", "skipped by label")
     if s.out_of_range:
         t.add_row("", f"{s.out_of_range:,}", "outside --since/--until")
+    if s.already_converted:
+        t.add_row("", f"{s.already_converted:,}", "already converted (--incremental)")
     if s.duplicate_message_ids_skipped:
-        t.add_row("", f"{s.duplicate_message_ids_skipped:,}", "duplicate Message-IDs")
+        t.add_row("", f"{s.duplicate_message_ids_skipped:,}", "duplicate Message-IDs (labels merged)")
+    if s.labels_updated:
+        t.add_row("", f"{s.labels_updated:,}", "with updated labels")
     if s.errors:
         where = "" if s.dry_run else " (raw copies in _unparsed/)"
         t.add_row("[red]Failed[/]", f"[red]{s.errors:,}[/]", f"could not be converted{where}")
@@ -272,6 +307,12 @@ def _print_summary(console: Console, s: ConvertStats, outdir: Path) -> None:
             f"({s.attachment_refs:,} references; dedup saved {human_bytes(saved)}, {pct:.0f}%)",
         )
     t.add_row("Markdown", human_bytes(s.markdown_bytes), "")
+    if s.pruned:
+        t.add_row("Pruned", f"{s.pruned:,}", "files from earlier runs")
+    elif s.stale_files:
+        t.add_row(
+            "[yellow]Stale[/]", f"{s.stale_files:,}", "files from earlier runs not produced now; --prune deletes them"
+        )
     if s.elapsed_s >= 0.1:
         rate = f"{s.processed / s.elapsed_s:,.0f} messages/s, "
         t.add_row("Time", f"{s.elapsed_s:,.1f} s", f"{rate}{human_bytes(s.bytes_total)} input")

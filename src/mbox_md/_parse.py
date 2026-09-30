@@ -1,6 +1,7 @@
 """Turn raw message bytes into a `ParsedMessage`. No file I/O."""
 
 import email
+import email.header
 import email.policy
 import email.utils
 import re
@@ -14,7 +15,7 @@ from ._attachments import ext_for
 from ._body import BodyKind, extract_body, strip_quoted_replies
 from ._naming import safe_name
 from ._options import ConvertOptions
-from ._reader import message_hash
+from ._reader import header_block, message_hash
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,28 @@ class ParsedMessage:
 def norm_labels(m: EmailMessage) -> list[str]:
     raw = re.sub(r"\s+", " ", str(m.get("X-Gmail-Labels") or ""))
     return [label.strip() for label in raw.split(",") if label.strip()]
+
+
+_LABELS_HEADER = re.compile(
+    rb"^X-Gmail-Labels:[ \t]*((?:[^\r\n]*(?:\r?\n[ \t][^\r\n]*)*))", re.IGNORECASE | re.MULTILINE
+)
+
+
+def peek_labels(raw: bytes) -> list[str]:
+    """The Gmail labels of a raw message, read from its headers without parsing the whole message. Cheap enough to
+    run in the main process for every message (used for dedup and label merging)."""
+    return labels_from_head(header_block(raw))
+
+
+def labels_from_head(head: bytes) -> list[str]:
+    m = _LABELS_HEADER.search(head)
+    if not m:
+        return []
+    value = m.group(1).decode("utf-8", "replace")
+    if "=?" in value:  # RFC 2047-encoded, e.g. non-ASCII label names
+        value = str(email.header.make_header(email.header.decode_header(value)))
+    value = re.sub(r"\s+", " ", value)
+    return [label.strip() for label in value.split(",") if label.strip()]
 
 
 def header_text(m: EmailMessage, header: str) -> str:
@@ -90,7 +113,7 @@ def parse_or_skip(raw: bytes, options: ConvertOptions | None = None) -> ParsedMe
     if options.skip_labels & set(labels):
         return "label"
     date = parse_date(m)
-    if not options.in_range(date.date() if date else None):
+    if not options.in_range(date):
         return "date"
     subject = str(m["Subject"] or "")
     body, body_kind, body_part = extract_body(m, options.max_html)

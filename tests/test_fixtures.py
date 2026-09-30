@@ -115,7 +115,7 @@ def test_basic_filenames(converted):
 
 def test_labels_and_dedup(converted):
     c = converted("labels")
-    assert (c.stats.ok, c.stats.skipped, c.stats.duplicate_message_ids_skipped) == (7, 2, 1)
+    assert (c.stats.ok, c.stats.skipped, c.stats.duplicate_message_ids_skipped) == (8, 3, 1)
     assert "Spam message" not in c.messages and "Trashed message" not in c.messages
     assert c["In the inbox"]["fm"]["labels"] == ["Inbox", "Important", "Opened"]
     assert c["Folded labels"]["fm"]["labels"] == ["Inbox", "Category Updates", "Opened"]
@@ -127,10 +127,9 @@ def test_labels_and_dedup(converted):
 
 def test_skip_labels_can_be_disabled(tmp_path):
     stats = convert(FIXTURES / "labels.mbox", tmp_path, ConvertOptions(workers=1, skip_labels=frozenset()))
-    assert (stats.ok, stats.skipped) == (9, 0)
+    assert (stats.ok, stats.skipped, stats.duplicate_message_ids_skipped) == (10, 0, 2)
 
 
-@pytest.mark.xfail(strict=True, reason="TODO: labels from duplicate Message-IDs are not merged")
 def test_duplicate_labels_are_merged(converted):
     assert converted("labels")["Duplicate, first copy"]["fm"]["labels"] == ["Inbox", "Sent"]
 
@@ -280,7 +279,6 @@ def test_separator_lookalikes_do_not_split_messages(converted):
     assert "@xxx Mon Jan 15" in c["Separator-like line without blank line before it"]["body"]
 
 
-@pytest.mark.xfail(strict=True, reason="TODO: mboxrd '>From ' lines are not unescaped")
 def test_mboxrd_from_lines_are_unescaped(converted):
     assert "\nFrom the archive" in converted("separators")["Escaped From line"]["body"]
 
