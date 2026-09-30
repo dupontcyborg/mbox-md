@@ -1,6 +1,6 @@
 from conftest import SEP, make_mbox, make_message
 
-from mbox_md.reader import iter_messages, message_key, split_messages
+from mbox_md._reader import iter_messages, message_key, split_messages
 
 
 def lines(data: bytes):

@@ -9,13 +9,13 @@ from pathlib import Path, PurePosixPath
 from typing import TextIO
 from urllib.parse import quote
 
-from .attachments import StoredAttachment, is_known_ext
+from ._attachments import StoredAttachment, is_known_ext
 
 
 def write_message(outdir: Path, relpath: Path, text: str) -> None:
     path = outdir / relpath
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def write_unparsed(outdir: Path, key: str, raw: bytes) -> str:
@@ -89,7 +89,7 @@ class AttachmentIndex:
                     md = outdir / message
                     text = md.read_text(encoding="utf-8")
                     text = _replace_path(_replace_path(text, old, canonical), quote(old), quote(canonical))
-                    md.write_text(text, encoding="utf-8")
+                    md.write_text(text, encoding="utf-8", newline="\n")
             for old in e.paths:
                 if old != canonical and (outdir / old).exists():
                     (outdir / old).unlink()
@@ -99,7 +99,7 @@ class AttachmentIndex:
 
     def write(self, outdir: Path) -> None:
         target = outdir / "attachments" / "index.jsonl" if (outdir / "attachments").exists() else os.devnull
-        with open(target, "w") as f:
+        with open(target, "w", encoding="utf-8", newline="\n") as f:
             for h, e in self.entries.items():
                 row = {"hash": h, "path": e.path, "size": e.size, "names": dict(e.names), "messages": e.messages}
                 f.write(json.dumps(row, ensure_ascii=False) + "\n")

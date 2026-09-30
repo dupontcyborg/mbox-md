@@ -10,13 +10,13 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from .attachments import AttachmentStore, StoredAttachment
-from .naming import message_relpath
-from .options import ConvertOptions
-from .parse import parse_message
-from .reader import iter_messages, message_hash, message_key
-from .render import render_markdown
-from .writer import AttachmentIndex, write_manifest_line, write_message, write_unparsed
+from ._attachments import AttachmentStore, StoredAttachment
+from ._naming import message_relpath
+from ._options import ConvertOptions
+from ._parse import parse_message
+from ._reader import iter_messages, message_hash, message_key
+from ._render import render_markdown
+from ._writer import AttachmentIndex, write_manifest_line, write_message, write_unparsed
 
 
 @dataclass
@@ -52,13 +52,13 @@ def convert_one(raw: bytes, outdir: Path, options: ConvertOptions) -> dict[str, 
         stored = []
         for part in msg.attachments:
             h, rel = store.put(part.data, part.ext)
-            stored.append(StoredAttachment(h, str(rel), part.name, len(part.data), part.content_type))
+            stored.append(StoredAttachment(h, rel.as_posix(), part.name, len(part.data), part.content_type))
         relpath = message_relpath(msg.date, msg.subject, msg.key)
         write_message(outdir, relpath, render_markdown(msg, stored, depth=len(relpath.parts) - 1))
         return {
             "status": "ok",
             "message_id": msg.message_id,
-            "path": str(relpath),
+            "path": relpath.as_posix(),
             "subject": msg.subject,
             "attachments": stored,
             "body_kind": msg.body_kind,
@@ -75,11 +75,13 @@ def convert_chunk(raws: list[bytes], outdir: Path, options: ConvertOptions) -> l
     return [convert_one(raw, outdir, options) for raw in raws]
 
 
-def run_parallel(work: Callable[[list[bytes]], list[dict[str, Any]]], messages: Iterator[bytes], workers: int):
+def run_parallel(
+    work: Callable[[list[bytes]], list[dict[str, Any]]], messages: Iterator[bytes], workers: int
+) -> Iterator[dict[str, Any]]:
     """Yield results as workers finish, feeding the pool lazily so the mbox is never held in memory."""
     chunks = iter(lambda: list(itertools.islice(messages, CHUNK)), [])
     with ProcessPoolExecutor(workers) as ex:
-        pending: set[Future] = set()
+        pending: set[Future[list[dict[str, Any]]]] = set()
         for chunk in chunks:
             pending.add(ex.submit(work, chunk))
             if len(pending) >= workers * IN_FLIGHT_PER_WORKER:
@@ -128,12 +130,12 @@ def convert(
 
     index = AttachmentIndex()
     if options.workers <= 1:
-        results = (convert_one(raw, outdir, options) for raw in feed())
+        results: Iterator[dict[str, Any]] = (convert_one(raw, outdir, options) for raw in feed())
     else:
         work = functools.partial(convert_chunk, outdir=outdir, options=options)
         results = run_parallel(work, feed(), options.workers)
     t0 = time.time()
-    with open(outdir / "messages.jsonl", "w") as mf:
+    with open(outdir / "messages.jsonl", "w", encoding="utf-8", newline="\n") as mf:
         for r in _raise_worker_errors(results):
             if r["status"] == "ok":
                 stats.ok += 1

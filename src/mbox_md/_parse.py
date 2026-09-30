@@ -9,11 +9,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from email.message import EmailMessage, Message
 
-from .attachments import ext_for
-from .body import BodyKind, extract_body
-from .naming import safe_name
-from .options import ConvertOptions
-from .reader import message_hash
+from ._attachments import ext_for
+from ._body import BodyKind, extract_body
+from ._naming import safe_name
+from ._options import ConvertOptions
+from ._reader import message_hash
 
 
 @dataclass(frozen=True)
@@ -104,7 +104,8 @@ def leaf_parts(part: Message) -> Iterator[Message]:
         yield part
         return
     for sub in part.get_payload():
-        yield from leaf_parts(sub)
+        if isinstance(sub, Message):
+            yield from leaf_parts(sub)
 
 
 def iter_attachments(m: EmailMessage, body_part: Message | None, options: ConvertOptions) -> Iterator[AttachmentPart]:
@@ -120,7 +121,7 @@ def iter_attachments(m: EmailMessage, body_part: Message | None, options: Conver
             yield from forwarded_message(p, fn)
             continue
         data = p.get_payload(decode=True)
-        if not data:
+        if not isinstance(data, bytes) or not data:
             continue
         if ct.startswith("image/") and len(data) < options.min_inline_image and disp != "attachment":
             continue
@@ -132,7 +133,7 @@ def iter_attachments(m: EmailMessage, body_part: Message | None, options: Conver
 def forwarded_message(part: Message, filename: str | None) -> Iterator[AttachmentPart]:
     """An attached email, saved as a standalone .eml named after its subject."""
     payload = part.get_payload()
-    if not payload:
+    if not isinstance(payload, list) or not payload or not isinstance(payload[0], Message):
         return
     inner = payload[0]
     data = inner.as_bytes(policy=email.policy.compat32)

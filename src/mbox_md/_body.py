@@ -1,25 +1,34 @@
 """Pick the message body and turn it into Markdown."""
 
+from __future__ import annotations
+
 import codecs
 import re
 from email.message import EmailMessage, Message
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from urllib.parse import urlsplit
+
+if TYPE_CHECKING:
+    from bs4 import BeautifulSoup, Tag
 
 BodyKind = Literal["plain", "html"]
 
 
 def part_text(part: Message) -> str:
     try:
-        return part.get_content()  # type: ignore[attr-defined]
+        content = part.get_content()  # type: ignore[attr-defined]
+        if isinstance(content, str):
+            return content
     except Exception:
-        data = part.get_payload(decode=True) or b""
-        cs = part.get_content_charset() or "utf-8"
-        try:
-            codecs.lookup(cs)
-        except LookupError:
-            cs = "utf-8"  # e.g. "unknown-8bit"
-        return data.decode(cs, "replace")  # type: ignore[union-attr]
+        pass
+    payload = part.get_payload(decode=True)
+    data = payload if isinstance(payload, bytes) else b""
+    cs = part.get_content_charset() or "utf-8"
+    try:
+        codecs.lookup(cs)
+    except LookupError:
+        cs = "utf-8"  # e.g. "unknown-8bit"
+    return data.decode(cs, "replace")
 
 
 # Tags whose contents are never part of the readable message. <head> itself is unwrapped, not dropped:
@@ -53,7 +62,7 @@ def html_to_md(html: str, max_html: int = 2_000_000) -> str:
     return tidy_whitespace(converter.convert_soup(soup))
 
 
-def unwrap_dead_links(soup) -> None:
+def unwrap_dead_links(soup: BeautifulSoup) -> None:
     """Keep the text of links that can't resolve outside the original page: relative paths, `#fragments`,
     `javascript:`. Protocol-relative links (`//host/path`) become https."""
     for a in soup.find_all("a", href=True):
@@ -70,7 +79,7 @@ _TABLE_PARTS = ("thead", "tbody", "tfoot", "tr", "td", "th")
 _MAX_DATA_CELL = 100
 
 
-def is_data_table(table) -> bool:
+def is_data_table(table: Tag) -> bool:
     """Most email tables only position content. Keep a Markdown table only for small, flat grids."""
     if table.get("role") == "presentation" or table.find("table"):
         return False
@@ -89,7 +98,7 @@ def is_data_table(table) -> bool:
     return True
 
 
-def unwrap_layout_tables(soup) -> None:
+def unwrap_layout_tables(soup: BeautifulSoup) -> None:
     """Turn layout tables into plain blocks so each cell keeps its own paragraphs."""
     layout = [t for t in soup.find_all("table") if not is_data_table(t)]
     for table in layout:

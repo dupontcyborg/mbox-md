@@ -4,8 +4,8 @@ import json
 from collections.abc import Sequence
 from urllib.parse import quote
 
-from .attachments import StoredAttachment
-from .parse import ParsedMessage
+from ._attachments import StoredAttachment
+from ._parse import ParsedMessage
 
 
 def yaml_scalar(v: object) -> str:

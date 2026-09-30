@@ -1,13 +1,17 @@
 import json
+import multiprocessing
+import os
 import re
 import subprocess
 import sys
 from urllib.parse import unquote
 
+import pytest
 from conftest import make_message
 
-from mbox_md import ConvertOptions, convert
-from mbox_md.cli import main
+from mbox_md import ConvertOptions, WorkerError, convert
+from mbox_md._cli import main
+from mbox_md._pipeline import _raise_worker_errors, run_parallel
 
 OPTS = ConvertOptions(workers=1)
 
@@ -26,14 +30,16 @@ def test_end_to_end(mbox_file, tmp_path):
     assert stats.unique_attachments == 1 and stats.attachment_refs == 2
     assert stats.attachment_bytes_referenced == 12 and stats.attachment_bytes_stored == 6
 
-    manifest = [json.loads(line) for line in (out / "messages.jsonl").read_text().splitlines()]
+    manifest = [json.loads(line) for line in (out / "messages.jsonl").read_text(encoding="utf-8").splitlines()]
     assert sorted(r["subject"] for r in manifest) == ["First", "Second"]
 
-    [entry] = [json.loads(line) for line in (out / "attachments" / "index.jsonl").read_text().splitlines()]
+    [entry] = [
+        json.loads(line) for line in (out / "attachments" / "index.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
     assert entry["names"] == {"a.txt": 1, "b.txt": 1} and len(entry["messages"]) == 2
 
     for md in out.glob("2023/11/*.md"):
-        for link in re.findall(r"\]\((\.\./[^)]+)\)", md.read_text()):
+        for link in re.findall(r"\]\((\.\./[^)]+)\)", md.read_text(encoding="utf-8")):
             assert (md.parent / unquote(link)).resolve().is_file()
 
 
@@ -62,6 +68,18 @@ def test_parallel_workers_match_in_process(mbox_file, tmp_path):
     assert files(tmp_path / "serial") == files(tmp_path / "parallel")
 
 
+def _die(chunk):
+    os._exit(1)
+
+
+def test_crashed_worker_raises_worker_error():
+    with pytest.raises(WorkerError, match="worker process failed"):
+        list(_raise_worker_errors(run_parallel(_die, iter([b"x"]), 2)))
+
+
+@pytest.mark.skipif(
+    multiprocessing.get_start_method() != "spawn", reason="only spawned workers re-import __main__ (macOS, Windows)"
+)
 def test_unstartable_workers_raise_instead_of_hanging(mbox_file, tmp_path):
     # From stdin, spawned workers can't re-import __main__. This used to hang forever.
     src = mbox_file(make_message())

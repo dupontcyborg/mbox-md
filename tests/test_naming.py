@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from mbox_md.naming import message_relpath, safe_name, slugify
+from mbox_md._naming import message_relpath, safe_name, slugify
 
 
 def test_slugify_strips_reply_prefixes_and_punctuation():

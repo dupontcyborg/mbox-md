@@ -1,7 +1,7 @@
 from urllib.parse import quote
 
-from mbox_md.attachments import AttachmentStore, StoredAttachment, ext_for
-from mbox_md.writer import AttachmentIndex
+from mbox_md._attachments import AttachmentStore, StoredAttachment, ext_for
+from mbox_md._writer import AttachmentIndex
 
 
 def test_ext_for_prefers_filename_suffix():
@@ -41,18 +41,20 @@ def test_ext_for_keeps_short_unknown_but_plausible_suffixes():
 
 def test_index_consolidates_same_bytes_stored_under_two_extensions(tmp_path):
     store, index = AttachmentStore(tmp_path), AttachmentIndex()
-    h, jpg = store.put(b"same bytes", ".jpg")
-    _, jpeg = store.put(b"same bytes", ".jpeg")
+    h, jpg_path = store.put(b"same bytes", ".jpg")
+    _, jpeg_path = store.put(b"same bytes", ".jpeg")
+    jpg, jpeg = jpg_path.as_posix(), jpeg_path.as_posix()
     for msg, rel, name in (("a.md", jpg, "photo.jpg"), ("b.md", jpeg, "photo.jpeg"), ("c.md", jpeg, "photo.jpeg")):
-        (tmp_path / msg).write_text(f'attachments: ["{rel}"]\n- [{name}]({quote(str(rel))})\n')
-        index.add(msg, [StoredAttachment(h, str(rel), name, 10, "image/jpeg")])
+        (tmp_path / msg).write_text(f'attachments: ["{rel}"]\n- [{name}]({quote(rel)})\n', encoding="utf-8")
+        index.add(msg, [StoredAttachment(h, rel, name, 10, "image/jpeg")])
 
     assert index.consolidate(tmp_path) == 1
     # Both are known extensions, so the one used by more references wins.
-    assert index.entries[h].path == str(jpeg)
+    assert index.entries[h].path == jpeg
     assert not (tmp_path / jpg).exists() and (tmp_path / jpeg).exists()
     for msg in ("a.md", "b.md", "c.md"):
-        assert str(jpeg) in (tmp_path / msg).read_text() and str(jpg) not in (tmp_path / msg).read_text()
+        text = (tmp_path / msg).read_text(encoding="utf-8")
+        assert jpeg in text and jpg not in text
 
 
 def test_index_prefers_known_extension_over_popular_unknown_one(tmp_path):
@@ -70,7 +72,7 @@ def test_consolidation_never_corrupts_a_path_that_extends_the_old_one(tmp_path):
     for rel in ("attachments/ab/ab.html", "attachments/ab/ab.html", "attachments/ab/ab.htm"):
         index.add("m.md", [StoredAttachment("ab", rel, "x", 1, "text/html")])
     index.consolidate(tmp_path)
-    assert md.read_text() == "[a](../attachments/ab/ab.html) [b](../attachments/ab/ab.html)\n"
+    assert md.read_text(encoding="utf-8") == "[a](../attachments/ab/ab.html) [b](../attachments/ab/ab.html)\n"
 
 
 def test_ext_for_ignores_hex_junk_suffix():

@@ -6,14 +6,14 @@ import re
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
-from typing import BinaryIO
+from typing import IO
 
 # Gmail Takeout separator: "From 1234567890@xxx Mon Jan 01 00:00:00 +0000 2024"
 SEP = re.compile(rb"^From \d+@xxx \w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d [+-]\d{4} \d{4}\r?\n$")
 
 
 @contextlib.contextmanager
-def open_mbox(path: str | Path) -> Iterator[BinaryIO]:
+def open_mbox(path: str | Path) -> Iterator[IO[bytes]]:
     """Plain .mbox, or a .zst streamed through `zstd -d` (no decompressed copy on disk)."""
     if str(path).endswith(".zst"):
         proc = subprocess.Popen(["zstd", "-d", "--long=27", "-c", str(path)], stdout=subprocess.PIPE, bufsize=8 << 20)

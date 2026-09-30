@@ -2,9 +2,9 @@ import json
 
 from conftest import make_message
 
-from mbox_md.attachments import StoredAttachment
-from mbox_md.parse import parse_message
-from mbox_md.render import render_markdown
+from mbox_md._attachments import StoredAttachment
+from mbox_md._parse import parse_message
+from mbox_md._render import render_markdown
 
 
 def front_matter(text: str) -> dict:

@@ -5,8 +5,8 @@ import json
 import sys
 
 from . import __version__
-from .options import ConvertOptions, default_workers
-from .pipeline import ConvertStats, convert
+from ._options import ConvertOptions, default_workers
+from ._pipeline import ConvertStats, convert
 
 
 def build_parser() -> argparse.ArgumentParser:

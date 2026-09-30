@@ -3,6 +3,8 @@
 import importlib.util
 import json
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -41,7 +43,10 @@ class Converted:
         return sorted(p for p in root.rglob("*") if p.is_file() and p.name != "index.jsonl") if root.exists() else []
 
     def index(self):
-        return [json.loads(line) for line in (self.out / "attachments" / "index.jsonl").read_text().splitlines()]
+        return [
+            json.loads(line)
+            for line in (self.out / "attachments" / "index.jsonl").read_text(encoding="utf-8").splitlines()
+        ]
 
 
 @pytest.fixture(scope="module")
@@ -291,15 +296,13 @@ def test_crlf_mbox(converted):
 def test_empty_mbox(converted):
     c = converted("empty")
     assert (c.stats.ok, c.stats.processed) == (0, 0)
-    assert (c.out / "messages.jsonl").read_text() == ""
+    assert (c.out / "messages.jsonl").read_text(encoding="utf-8") == ""
 
 
 def test_zst_input(tmp_path):
-    zstd = pytest.importorskip("shutil").which("zstd")
+    zstd = shutil.which("zstd")
     if not zstd:
         pytest.skip("zstd CLI not installed")
-    import subprocess
-
     src = tmp_path / "basic.mbox.zst"
     subprocess.run([zstd, "-q", "--long=27", str(FIXTURES / "basic.mbox"), "-o", str(src)], check=True)
     assert convert(src, tmp_path / "out", ConvertOptions(workers=1)).ok == 8

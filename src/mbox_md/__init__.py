@@ -9,10 +9,10 @@ Or, without writing anything:
         msg = mbox_md.parse_message(raw)
 """
 
-from .options import ConvertOptions
-from .parse import AttachmentPart, ParsedMessage, parse_message
-from .pipeline import ConvertStats, WorkerError, convert
-from .reader import iter_messages
+from ._options import ConvertOptions
+from ._parse import AttachmentPart, ParsedMessage, parse_message
+from ._pipeline import ConvertStats, WorkerError, convert
+from ._reader import iter_messages
 
 __version__ = "0.1.0.dev0"
 
@@ -21,9 +21,9 @@ __all__ = [
     "ConvertOptions",
     "ConvertStats",
     "ParsedMessage",
+    "WorkerError",
     "__version__",
     "convert",
     "iter_messages",
-    "WorkerError",
     "parse_message",
 ]
