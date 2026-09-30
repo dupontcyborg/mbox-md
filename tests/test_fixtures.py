@@ -3,8 +3,6 @@
 import importlib.util
 import json
 import re
-import shutil
-import subprocess
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -299,10 +297,11 @@ def test_empty_mbox(converted):
     assert (c.out / "messages.jsonl").read_text(encoding="utf-8") == ""
 
 
-def test_zst_input(tmp_path):
-    zstd = shutil.which("zstd")
-    if not zstd:
-        pytest.skip("zstd CLI not installed")
-    src = tmp_path / "basic.mbox.zst"
-    subprocess.run([zstd, "-q", "--long=27", str(FIXTURES / "basic.mbox"), "-o", str(src)], check=True)
-    assert convert(src, tmp_path / "out", ConvertOptions(workers=1)).ok == 8
+def test_zst_and_gz_input(tmp_path):
+    import compress_utils as cu
+
+    data = (FIXTURES / "basic.mbox").read_bytes()
+    for alg, ext in (("zstd", ".zst"), ("gzip", ".gz")):
+        src = tmp_path / f"basic.mbox{ext}"
+        src.write_bytes(cu.compress(data, alg))
+        assert convert(src, tmp_path / alg, ConvertOptions(workers=1)).ok == 8

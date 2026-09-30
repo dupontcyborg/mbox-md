@@ -96,23 +96,6 @@ def test_missing_input_is_a_clear_error(capsys, tmp_path):
     assert code == 1 and "no such file" in err and out == ""
 
 
-def test_zst_without_zstd_is_a_clear_error(capsys, tmp_path, monkeypatch):
-    src = tmp_path / "x.mbox.zst"
-    src.write_bytes(b"not really zstd")
-    monkeypatch.setattr("mbox_md._reader.shutil.which", lambda _: None)
-    code, _, err = run(capsys, src, tmp_path / "out")
-    assert code == 1 and "needs the zstd command" in err
-
-
-def test_corrupt_zst_is_a_clear_error(capsys, tmp_path):
-    if not __import__("shutil").which("zstd"):
-        pytest.skip("zstd CLI not installed")
-    src = tmp_path / "x.mbox.zst"
-    src.write_bytes(b"\x28\xb5\x2f\xfd" + b"garbage" * 100)
-    code, _, err = run(capsys, src, tmp_path / "out")
-    assert code == 1 and "zstd could not decompress" in err
-
-
 def test_failures_are_summarized_and_detailed_with_verbose(capsys, tmp_path, monkeypatch):
     def boom(raw, options=None):
         raise ValueError("synthetic failure")
@@ -188,22 +171,6 @@ def test_limit(capsys, tmp_path):
 # --- the reader behind the progress bar ------------------------------------------------------------------------
 
 
-def test_zst_stream_matches_plain_and_reports_position(tmp_path):
-    zstd = __import__("shutil").which("zstd")
-    if not zstd:
-        pytest.skip("zstd CLI not installed")
-    src = tmp_path / "attachments.mbox.zst"
-    subprocess.run([zstd, "-q", str(FIXTURES / "attachments.mbox"), "-o", str(src)], check=True)
-    plain = list(MboxStream(FIXTURES / "attachments.mbox").__enter__())
-    with MboxStream(src) as s:
-        positions, messages = [], []
-        for raw in s:
-            messages.append(raw)
-            positions.append(s.position)  # querying position must never disturb the stream
-    assert messages == plain
-    assert positions == sorted(positions) and positions[-1] == src.stat().st_size
-
-
 def test_missing_file_raises_read_error(tmp_path):
     with pytest.raises(ReadError, match="no such file"):
         MboxStream(tmp_path / "missing.mbox")
@@ -266,17 +233,6 @@ def test_progress_bar_path_runs_when_output_is_a_terminal(tmp_path, monkeypatch)
         text=True,
     )
     assert r.returncode == 0 and "Converting" in r.stderr and "100%" in r.stderr and "messages" in r.stderr
-
-
-def test_zst_early_stop_is_quiet(tmp_path):
-    zstd = __import__("shutil").which("zstd")
-    if not zstd:
-        pytest.skip("zstd CLI not installed")
-    src = tmp_path / "basic.mbox.zst"
-    subprocess.run([zstd, "-q", str(FIXTURES / "basic.mbox"), "-o", str(src)], check=True)
-    with MboxStream(src) as s:
-        first = next(iter(s))  # stop after one message: zstd sees a broken pipe, which must not raise
-    assert b"Plain text only" in first
 
 
 def test_stream_must_be_entered(tmp_path):

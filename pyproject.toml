@@ -25,6 +25,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "compress-utils>=0.8.0",
     "markdownify>=1.2.3",
     "rich>=15.0.0",
 ]
@@ -81,6 +82,11 @@ files = ["src"]
 [[tool.mypy.overrides]]
 module = ["markdownify"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# compress-utils 0.8.0 ships .pyi stubs but not the py.typed marker; use the stubs anyway.
+module = ["compress_utils", "compress_utils.*"]
+follow_untyped_imports = true
 
 [tool.ruff]
 line-length = 120

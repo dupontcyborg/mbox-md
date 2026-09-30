@@ -19,7 +19,7 @@ All fixed on 2026-09-30, with regression tests. Full archive after the fixes: 65
 - [x] Replaced the GPL-3.0 `html2text` with `markdownify` (MIT; its dependencies beautifulsoup4, soupsieve, and six are MIT too). Layout tables are unwrapped into paragraphs, and `<head>`, `<style>`, `<script>`, and images are dropped. On 2,000 real HTML-only bodies the output is about 10% smaller than html2text's, with far less table markup, but conversion is about 3x slower (4.7 ms vs 1.4 ms per body). lxml only saved 12%, so it isn't used.
 - [x] Measured the markdownify slowdown end to end: none measurable (7.48 s with html2text vs 7.53 s with markdownify for the first 10,000 real messages on 16 cores). Only about 9% of messages are HTML-only, and conversion runs spread across the workers.
 - [x] Spiked mdream (2026-09-30) on 2,000 real HTML-only bodies. Its Rust engine takes 0.08 ms per body and its JS engine 0.39 ms, versus 4.7 ms for markdownify, but it writes nested layout tables out as raw `<table><tr><td>` HTML in 47% of emails, and `tagOverrides` doesn't prevent it. Because conversion isn't the bottleneck, it isn't worth a TypeScript rewrite. If HTML speed ever matters, the Rust core is also published as the `mdream` crate (usable through PyO3), and `html-to-markdown` on PyPI (MIT, Rust, 0.48 ms per body) is a drop-in option.
-- [ ] The real bottleneck is the single-threaded reader: in the parent process, decompressing and splitting 2.6 GB takes 5.5 s of a 7.5 s run (about 480 MB/s). Try reading large chunks and searching for separators with a regex instead of iterating line by line, `mmap` for plain `.mbox`, and multithreaded zstd decoding, or split the file into byte ranges that workers read on their own.
+- [x] The single-threaded reader bottleneck: replaced line-by-line splitting with chunked `bytes.find` splitting (see the Compression section). Further option: let workers read byte ranges of plain `.mbox` files themselves.
 
 ## Architecture and packaging
 
@@ -42,7 +42,7 @@ Goal: split the single script into small modules that can each be tested alone, 
 - [x] Deleted `mbox_to_markdown.py`; the package replaces it.
 - [x] Keep attachment writes inside the workers, behind the store interface, so attachment bytes aren't sent back to the parent process. Keep the pure steps (parse and render) free of I/O so they can be tested directly.
 - [x] Polished the CLI: a `rich` progress bar (bytes, messages, messages per second, ETA), a summary table, clear errors with exit codes (1 for unreadable input, 130 for Ctrl-C, with prompt shutdown), and `--quiet`, `--verbose`, and `--json`. Kept argparse rather than typer; subcommands can wait until there's a second command.
-- [ ] Keep runtime dependencies small (markdownify, `rich`, and optionally `compress-utils` as an extra: `mbox-md[zstd]`).
+- [x] Runtime dependencies: markdownify, rich, and compress-utils, all MIT.
 - [x] Branch coverage with coverage.py, including worker processes and the zstd feeder thread. CI enforces a 95% minimum on the Ubuntu / Python 3.13 job and posts the report to the job summary; measured 98% on 2026-09-30. Raise `fail_under` in `pyproject.toml` as coverage grows.
 - [ ] Tooling: pre-commit.
 - [x] CI with GitHub Actions (`.github/workflows/ci.yml`): ruff, mypy, and a fixture freshness check; pytest on Python 3.11 to 3.14 on Linux, macOS, and Windows; wheel and sdist builds with a clean-environment smoke test. `release.yml` publishes to PyPI via trusted publishing when a `v*` tag matching `__version__` is pushed.
@@ -64,7 +64,7 @@ Goal: split the single script into small modules that can each be tested alone, 
 ## Format support and robustness
 
 - [ ] Support mbox flavors other than Gmail Takeout. The separator regex currently only accepts `From <digits>@xxx <date>` lines, so add a generic mboxrd/mboxo fallback and unescape `>From ` lines.
-- [ ] Read `.mbox` inputs that are gzip- or zstd-compressed, not just `.zst`.
+- [x] Read gzip- and zstd-compressed inputs (compress-utils).
 - [ ] Handle unknown or invalid charsets (the `unknown-8bit` fallback exists; add tests for it and for other bad encodings).
 - [ ] Decide how to treat messages without a readable body, and whether to note that in the front matter. Counts on the full archive: 275 have no body part at all (`body_none` in the stats), and 579 render as `_(no body)_` (522 attachment-only, 57 truly empty). Both numbers are right; they measure different things.
 - [ ] Keep failed messages in `_unparsed/` as raw `.eml` files and write a short report of what failed and why.
@@ -89,14 +89,24 @@ Goal: split the single script into small modules that can each be tested alone, 
 - [x] Cover the filename scheme (`YYYY-MM-DD-HHMM-<slug>-<id4>.md`) for unicode, non-Latin, and very long subjects.
 - [x] Check that the relative links in the Markdown resolve to real files at every folder depth.
 
-## Compression (optional, inline)
+## Compression (compress-utils)
 
-- [ ] Add an opt-in step, for example `--compress-source`, that compresses the input mbox to `.zst` after a successful conversion, if the user wants it.
-- [ ] Use the `compress-utils` pip package for this (`compress_utils.CompressStream("zstd", level=...)`) instead of shelling out to the `zstd` CLI, so the tool has no system dependency.
-- [ ] Verify the result before anything is deleted: decompress via `DecompressStream`, compare the byte count, and check a checksum of the original against the decompressed stream.
-- [ ] Never delete the original mbox by default. Deleting should need an explicit flag such as `--delete-source-after-verify`.
-- [ ] Open question: the CLI run used `zstd -T0 -10 --long=27`. Check whether `compress-utils` exposes multithreading and long-distance windows. If not, measure the ratio and speed difference on a large mbox before choosing a default level.
-- [ ] Open question: reading `.zst` input currently shells out to `zstd -d --long=27`. Confirm `DecompressStream` can read archives written with a long window, and replace the subprocess if it can.
+- [x] Read `.mbox.zst` and `.mbox.gz` in-process with compress-utils (detected from magic bytes); the `zstd` CLI is no longer used or needed. Decoding runs in a thread that overlaps with parsing. Verified on the full archive: all 67,704 messages byte-identical to `zstd -dc`.
+- [x] `--compress-source zstd|gzip`, `--compress-level`, and `--delete-source` (plus `mbox_md.compress_mbox`): compress next to the input, verify by a full decompression (size and SHA-256), and delete the original only after that and only when asked. On failure the output is removed and the original is untouched.
+- [x] Reader speedup: messages are now split from large chunks with `bytes.find` plus a regex check instead of Python line iteration (209M lines on the full archive). Full conversion: 38.5 s, vs 34.3 s with the old zstd-CLI reader and 42 s for the original script. The remaining gap is compress-utils decode speed; see below.
+- [ ] Support concatenated input once compress-utils does (then drop the guards in `_compression.py`).
+- [ ] Switch `--compress-source` to long-distance matching once compress-utils has it. On a 500 MB slice of the real archive, zstd `--long=27` gets 3.70x vs 3.00x without it.
+
+### compress-utils issues found while integrating (0.8.0)
+
+- [ ] Streaming decode silently stops after the first gzip member or zstd frame: `cat a.gz b.gz` or pzstd output loses data without an error. mbox-md refuses these files for now (a zstd frame walk before decoding, and a gzip ISIZE check after).
+- [ ] `DecompressStream.decompress()` re-acquires the GIL many times per call: decoding 1.5 GB takes 4.4 s alone and 8.8 s next to a busy Python thread (4.9 s with a 0.5 ms switch interval, which mbox-md sets while reading as a workaround). Releasing the GIL for the whole call would fix it.
+- [ ] Large `decompress()` inputs are slow: 32 MB chunks take 18.1 s for the same 1.5 GB that takes 4.4 s in 4 MB chunks, which suggests the output buffer is regrown and copied repeatedly.
+- [ ] Decode throughput: 762 MB/s vs 1,280 MB/s for the zstd CLI on the full archive.
+- [ ] The PyPI wheel ships `.pyi` stubs but no `py.typed` marker, despite the README, so mypy treats the package as untyped (mbox-md sets `follow_untyped_imports` as a workaround).
+- [ ] No window/long-distance option and no multithreaded compression (planned).
+- [ ] zstd levels 6-10 fall off a cliff: 133 MB/s at level 5, 24 MB/s at 6, 6 MB/s at 10, for about 3% better ratio.
+- [ ] No macOS x86_64 wheel, so Intel Macs build from the sdist (needs a compiler); now that mbox-md depends on it, that affects installs there.
 
 ## Docs
 

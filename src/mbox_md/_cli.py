@@ -11,12 +11,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from . import __version__
+from ._compression import CompressionError, CompressResult, compress_mbox, detect
 from ._options import ConvertOptions, default_workers
 from ._pipeline import ConvertStats, WorkerError, convert
 from ._reader import ReadError
 
 if TYPE_CHECKING:
     from rich.console import Console
+    from rich.progress import TaskID
 
 _SIZE = re.compile(r"(?i)^\s*(\d+(?:\.\d+)?)\s*(b|k|kb|kib|m|mb|mib)?\s*$")
 _UNITS = {None: 1, "b": 1, "k": 1024, "kb": 1024, "kib": 1024, "m": 1 << 20, "mb": 1 << 20, "mib": 1 << 20}
@@ -56,7 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Convert an mbox archive (such as a Gmail Takeout export) into one Markdown file per message.",
         epilog="Example: mbox-md 'All mail Including Spam and Trash.mbox' archive/ --since 2020-01-01",
     )
-    ap.add_argument("mbox", type=Path, help="input .mbox or .mbox.zst")
+    ap.add_argument("mbox", type=Path, help="input .mbox, .mbox.zst, or .mbox.gz")
     ap.add_argument("outdir", type=Path, nargs="?", help="output folder (not needed with --dry-run)")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
@@ -86,6 +88,19 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--workers", type=int, default=default_workers(), help="worker processes (default: CPUs - 1)")
     run.add_argument("--dry-run", action="store_true", help="count messages and estimate output size; write nothing")
 
+    keep = ap.add_argument_group("compressing the source mbox (after a successful conversion)")
+    keep.add_argument(
+        "--compress-source",
+        choices=["zstd", "gzip"],
+        help="compress the input mbox next to it (.zst or .gz), verified by a full decompression",
+    )
+    keep.add_argument(
+        "--compress-level", type=int, default=5, metavar="1-10", help="1 fastest to 10 smallest (default: 5)"
+    )
+    keep.add_argument(
+        "--delete-source", action="store_true", help="delete the original mbox, only after the compressed copy verifies"
+    )
+
     out = ap.add_argument_group("output")
     mode = out.add_mutually_exclusive_group()
     mode.add_argument("-q", "--quiet", action="store_true", help="no progress or summary; only errors")
@@ -103,6 +118,14 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("--since is after --until")
     if a.workers < 1:
         ap.error("--workers must be at least 1")
+    if a.delete_source and not a.compress_source:
+        ap.error("--delete-source needs --compress-source")
+    if a.compress_source and a.dry_run:
+        ap.error("--compress-source can't be combined with --dry-run")
+    if not 1 <= a.compress_level <= 10:
+        ap.error("--compress-level must be 1 to 10")
+    if a.compress_source and a.mbox.is_file() and detect(a.mbox) is not None:
+        ap.error(f"{a.mbox} is already compressed")
 
     from rich.console import Console
 
@@ -130,7 +153,7 @@ def main(argv: list[str] | None = None) -> int:
             stats = convert(a.mbox, outdir, options, on_error=on_error)
         else:
             stats = _convert_with_progress(a.mbox, outdir, options, err, on_error)
-    except ReadError as e:
+    except (ReadError, CompressionError) as e:
         err.print(f"[red]error:[/] {e}")
         return 1
     except WorkerError as e:
@@ -148,7 +171,43 @@ def main(argv: list[str] | None = None) -> int:
     if failures and not a.verbose and not a.json:
         where = "" if a.dry_run else f"; raw copies are in {outdir / '_unparsed'}"
         err.print(f"[yellow]{len(failures):,} message(s) failed{where}. Rerun with --verbose for details.[/]")
+    if a.compress_source:
+        try:
+            result = _compress_source(a, err, show_progress=not (a.quiet or a.json))
+        except CompressionError as e:
+            err.print(f"[red]error:[/] {e}")
+            return 1
+        except KeyboardInterrupt:
+            err.print(f"[yellow]interrupted; {a.mbox} was not changed[/]")
+            return 130
+        if not (a.quiet or a.json):
+            kept = "deleted the original" if result.source_deleted else "kept the original"
+            err.print(
+                f"Compressed {a.mbox.name} → {result.dest.name}: {human_bytes(result.source_bytes)} → "
+                f"{human_bytes(result.compressed_bytes)} ({result.ratio:.2f}x), verified; {kept}"
+            )
     return 0
+
+
+def _compress_source(a: argparse.Namespace, err: Console, *, show_progress: bool) -> CompressResult:
+    from rich.progress import BarColumn, DownloadColumn, Progress, TextColumn, TimeRemainingColumn, TransferSpeedColumn
+
+    columns = [TextColumn("{task.description:<11}"), BarColumn(), DownloadColumn(), TransferSpeedColumn()]
+    with Progress(*columns, TimeRemainingColumn(), console=err, disable=not (show_progress and err.is_terminal)) as p:
+        tasks: dict[str, TaskID] = {}
+
+        def on_progress(phase: str, done: int, total: int) -> None:
+            if phase not in tasks:
+                tasks[phase] = p.add_task("Compressing" if phase == "compress" else "Verifying", total=total)
+            p.update(tasks[phase], completed=done, total=total)
+
+        return compress_mbox(
+            a.mbox,
+            algorithm=a.compress_source,
+            level=a.compress_level,
+            delete_source=a.delete_source,
+            on_progress=on_progress,
+        )
 
 
 def _convert_with_progress(

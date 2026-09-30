@@ -12,6 +12,7 @@ CLI:
 mbox-md "All mail Including Spam and Trash.mbox" archive/
 mbox-md takeout.mbox.zst archive/ --since 2020-01-01 --strip-quotes
 mbox-md takeout.mbox --dry-run            # counts and output size, writes nothing
+mbox-md takeout.mbox archive/ --compress-source zstd --delete-source
 ```
 
 | Option | What it does |
@@ -23,7 +24,12 @@ mbox-md takeout.mbox --dry-run            # counts and output size, writes nothi
 | `--strip-quotes` | drop quoted replies from bodies |
 | `--workers N` | worker processes; default CPUs − 1 |
 | `--dry-run` | parse and count everything, write nothing |
+| `--compress-source zstd\|gzip` | after converting, compress the input mbox next to it and verify it by decompressing it in full |
+| `--compress-level 1-10` | compression level, 1 fastest to 10 smallest (default 5) |
+| `--delete-source` | delete the original mbox, only after the compressed copy verifies |
 | `-q`, `-v`, `--json` | quiet, report each failure, or print stats as JSON |
+
+Input can be plain, zstd, or gzip; compression is detected from the file's contents and handled in-process by [compress-utils](https://pypi.org/project/compress-utils/), with no `zstd` or `gzip` command needed.
 
 API:
 

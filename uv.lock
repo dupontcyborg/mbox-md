@@ -93,6 +93,30 @@ wheels = [
 ]
 
 [[package]]
+name = "compress-utils"
+version = "0.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/69/27/8696bb83ca2ce5f4683aabb665f8e28d553627d65b6ed3d08f9972d6085b/compress_utils-0.8.0.tar.gz", hash = "sha256:e8c4140519ae8ff45c5a94e0a1aad495c270716730c146bdf837035d28b98e9c", size = 3181590, upload-time = "2026-07-16T22:11:01.058Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/a1/784d92913d3ab3aab5f9dd3324472c9113a908ffe5eb7e545a55db7000c0/compress_utils-0.8.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:bbad600560cfc870d0a28bdb5f78d6efb13eb5e0b09b72af0f0d4222e496110a", size = 898173, upload-time = "2026-07-16T22:10:32.527Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/54/6576630e4f8133a27e33f1e71ae0512fac1d522174237252a38fa6e0d9fc/compress_utils-0.8.0-cp311-cp311-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bd727b82edf3724d006deea3ba38d36364ba0df46708e643b2fbf98c61beb779", size = 1145515, upload-time = "2026-07-16T22:10:34.149Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/57/8f8836a625f2847667354a9f47fc934bbaccbf8e2d677f6b127358015d35/compress_utils-0.8.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9172f1d75d7bc8245c349fb254861d9c133da5516402723f501c86865eeaa707", size = 1182881, upload-time = "2026-07-16T22:10:35.99Z" },
+    { url = "https://files.pythonhosted.org/packages/42/8a/2561def2be4427edd286a33074d36bf36c78c7ebbeb93ee0141c87b48966/compress_utils-0.8.0-cp311-cp311-win_amd64.whl", hash = "sha256:917d46cf5f621299ab571e506692234ce23ef4749643db8e1ff378fa45c470e4", size = 1834964, upload-time = "2026-07-16T22:10:38.086Z" },
+    { url = "https://files.pythonhosted.org/packages/8f/b6/67354ed6e9362c14346615899ff640e87b46b5a9f7b031537eaca442344e/compress_utils-0.8.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9002ee0a120e0e9c0113f34d625d780b2781f270ae472bff2c3d1c48c860c1ed", size = 898190, upload-time = "2026-07-16T22:10:39.777Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/76/f9943cf40801314b6249484ad7e80741cf1e2470d58a7b5b6d13fbc2cf99/compress_utils-0.8.0-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:353db22f4bbc2810e923d110881db5081c84d759bef7fe07814776c9b53f8765", size = 1146543, upload-time = "2026-07-16T22:10:41.552Z" },
+    { url = "https://files.pythonhosted.org/packages/49/cf/f52678d7193359f1e0e2ebb85f89a6b1774aff5328c0a532164710e92eb0/compress_utils-0.8.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:258ef0a929133afe3857bae82daa0d82773f22446ea1f959269a53d8bd2b5dec", size = 1182521, upload-time = "2026-07-16T22:10:43.337Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/79/8b859366d5d90cd44f561040b52acb32becf6fce500ab3f902d474b08a19/compress_utils-0.8.0-cp312-cp312-win_amd64.whl", hash = "sha256:725476e6c77a4d14e171f6efbfffa478a2979a4f042fb77e3f0accf6002c8d3b", size = 1837942, upload-time = "2026-07-16T22:10:45.051Z" },
+    { url = "https://files.pythonhosted.org/packages/19/76/07e57f2739ea365458eda5f7a32b8b5af108976c5ba2e687a78ad3990768/compress_utils-0.8.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:32f763217dcf97510de159f1a7c652a2111da6789cd38c17c412bd92699aca25", size = 898238, upload-time = "2026-07-16T22:10:46.716Z" },
+    { url = "https://files.pythonhosted.org/packages/19/5f/198e486899599ff324bb52c365c1cae5093dbca86e891ede173ef42ad5a9/compress_utils-0.8.0-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bf08d40b23cc4e1577fa2f78c2048580f0213ba955e962968afb220db834a629", size = 1146604, upload-time = "2026-07-16T22:10:48.638Z" },
+    { url = "https://files.pythonhosted.org/packages/14/73/8f469a8e1d129481ab8f7e6672abd89dbdc1378c1d763529e1c4dd16a4c0/compress_utils-0.8.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:23b0a1fbee7c7f110a679128fe3b23b429bf4614f289bc93650244895e00c489", size = 1182518, upload-time = "2026-07-16T22:10:50.359Z" },
+    { url = "https://files.pythonhosted.org/packages/58/35/450bc6331d02676cf27ce6ea04aaa38cad3d911f9faf3fcd299257e81d7c/compress_utils-0.8.0-cp313-cp313-win_amd64.whl", hash = "sha256:583bed9d037373ab91cc4007c56d590f6aaf2675e669cafa07fafac11f58611d", size = 1838039, upload-time = "2026-07-16T22:10:52.309Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/a3/e9138fc37b72840915c22e2e58912484938a4e637d26270845201c8f3cf5/compress_utils-0.8.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:be662fb65da1d55c8b8ed8f2ce97244474534d710df06f55a6d36cf8486b7067", size = 898818, upload-time = "2026-07-16T22:10:54.172Z" },
+    { url = "https://files.pythonhosted.org/packages/10/30/1489b6f39a6d0d33e8b393aa294eae24c4181f0f4b9170d19057ac01e1d1/compress_utils-0.8.0-cp314-cp314-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0e8f6a9638069d0bb4b711eadef5d61af415613d8aef711ce686677099255718", size = 1147790, upload-time = "2026-07-16T22:10:55.914Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/52/cf830c5bea9784588387bd5eb4bdb1c0c3f19a3e52a4be49d3f9d88833f9/compress_utils-0.8.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:58850c38adc704ef049681d261dffe89c7dad7f2e6673119d2381fa04eb1a6ed", size = 1182651, upload-time = "2026-07-16T22:10:57.659Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/66/41b089b2a1d8813fe428fb396055bbb34198a6393884a1dc5dc85f7e4227/compress_utils-0.8.0-cp314-cp314-win_amd64.whl", hash = "sha256:c04f26f2a31a2dfe11324433d59210dd8a93d9b437d6a37c71271aad5c2ca3bc", size = 1884588, upload-time = "2026-07-16T22:10:59.418Z" },
+]
+
+[[package]]
 name = "coverage"
 version = "7.16.2"
 source = { registry = "https://pypi.org/simple" }
@@ -365,6 +389,7 @@ wheels = [
 name = "mbox-md"
 source = { editable = "." }
 dependencies = [
+    { name = "compress-utils" },
     { name = "markdownify" },
     { name = "rich" },
 ]
@@ -380,6 +405,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "compress-utils", specifier = ">=0.8.0" },
     { name = "markdownify", specifier = ">=1.2.3" },
     { name = "rich", specifier = ">=15.0.0" },
 ]
