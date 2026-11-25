@@ -29,4 +29,4 @@ jobs:
         run: |
           version=$(ls dist/*.whl | sed -E 's#dist/mbox_md-([^-]+)-.*#\1#')
           test "v$version" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != version $version"; exit 1; }
-      - uses: pypa/gh-action-pypi-publish@v1.14.2
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
